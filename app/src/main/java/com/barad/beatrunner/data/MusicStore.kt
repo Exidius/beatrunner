@@ -38,7 +38,7 @@ class MusicStore {
                 artist = audioCursor.getString(2),
                 album = audioCursor.getString(3),
                 uri = ContentUris.withAppendedId(
-                        MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                        MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
                         audioCursor.getString(0).toLong()),
                 )
 
