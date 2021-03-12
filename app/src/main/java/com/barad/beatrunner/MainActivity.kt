@@ -13,7 +13,6 @@ import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.PlaybackParameters
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.ui.PlayerControlView
-import com.google.android.exoplayer2.ui.PlayerView
 
 
 class MainActivity : AppCompatActivity() {
@@ -79,5 +78,4 @@ class MainActivity : AppCompatActivity() {
             true
         }
     }
-
 }
