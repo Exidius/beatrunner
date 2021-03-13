@@ -5,7 +5,9 @@ import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.barad.beatrunner.data.MusicStore
@@ -22,6 +24,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btn_slower: Button
     private lateinit var btn_faster: Button
     private lateinit var btn_reset: Button
+    private lateinit var tv_temmpo: TextView
     private var speed = 1.0F
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,6 +58,18 @@ class MainActivity : AppCompatActivity() {
                 speed += 0.1F
                 player.setPlaybackParameters(PlaybackParameters(speed))
             }
+
+            tv_temmpo = findViewById(R.id.tv_tempo)
+
+
+            // Initialize the players and effects, and start the audio engine.
+            Log.i("barad-log", "Starting native code")
+            System.loadLibrary("CrossExample")
+            Log.i("barad-log", "Loaded library")
+            CrossExample()
+            Log.i("barad-log", "Called constructor")
+            getTempo(musicList[0].path)
+            Log.i("barad-log", "called tempo")
         }
 
     }
@@ -78,4 +93,13 @@ class MainActivity : AppCompatActivity() {
             true
         }
     }
+
+    private fun getTempo(path: String) {
+        tv_temmpo.text = decode(path).toString()
+        Log.i("asd",decode(path).toString())
+    }
+
+    private external fun CrossExample();
+    private external fun decode(path: String): Float
+
 }

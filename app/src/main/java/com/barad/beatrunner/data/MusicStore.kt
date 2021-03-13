@@ -26,6 +26,7 @@ class MusicStore {
             MediaStore.Audio.Media.ARTIST,
             MediaStore.Audio.Media.ALBUM,
             MediaStore.Audio.Media.DURATION,
+            MediaStore.Audio.Media.DATA,
             // Might be useful later: MediaStore.Audio.Media.RELATIVE_PATH
 
         )
@@ -40,6 +41,7 @@ class MusicStore {
                 uri = ContentUris.withAppendedId(
                         MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
                         audioCursor.getString(0).toLong()),
+                path =  audioCursor.getString(5)
                 )
 
                 musicList.add(music)
