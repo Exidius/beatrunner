@@ -8,15 +8,15 @@ include_directories(${PATH_TO_SUPERPOWERED})
 
 # compile crossfader example to a native library
 add_library(
-	CrossExample
+    TempoFetcher
 	SHARED
-   	src/main/jni/CrossExample.cpp
+    src/main/jni/TempoFetcher.cpp
 	${PATH_TO_SUPERPOWERED}/OpenSource/SuperpoweredAndroidAudioIO.cpp
 )
 
 # link the native library against the following libraries
 target_link_libraries(
-    CrossExample
+	TempoFetcher
     log
     android
     OpenSLES

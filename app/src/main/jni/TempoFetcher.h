@@ -11,14 +11,11 @@
 #include <SuperpoweredAnalyzer.h>
 #include <OpenSource/SuperpoweredAndroidAudioIO.h>
 
-#define HEADROOM_DECIBEL 3.0f
-static const float headroom = powf(10.0f, -HEADROOM_DECIBEL * 0.05f);
-
-class CrossExample {
+class TempoFetcher {
 public:
 
-	CrossExample();
-	~CrossExample();
+	TempoFetcher();
+	~TempoFetcher();
 
 	static float decode(const char *path);
 

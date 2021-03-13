@@ -1,4 +1,4 @@
-#include "CrossExample.h"
+#include "TempoFetcher.h"
 #include <Superpowered.h>
 #include <SuperpoweredSimple.h>
 #include <SuperpoweredCPU.h>
@@ -8,7 +8,7 @@
 #include <SLES/OpenSLES_AndroidConfiguration.h>
 #include <vector>
 
-CrossExample::CrossExample()
+TempoFetcher::TempoFetcher()
 {
     Superpowered::Initialize(
             "ExampleLicenseKey-WillExpire-OnNextUpdate",
@@ -23,7 +23,7 @@ CrossExample::CrossExample()
 }
 
 
-float CrossExample::decode(const char *path) {
+float TempoFetcher::decode(const char *path) {
 
     auto *decoder = new Superpowered::Decoder();
 
@@ -44,24 +44,26 @@ float CrossExample::decode(const char *path) {
     };
 
     analyzer->makeResults(60,200,0,0,false,0,false,false,false);
+    float bpm = analyzer->bpm;
 
-  //  free(output);
-  //  free(audioInFloat);
-  //  free(decoder);
+    free(decoder);
+    free(analyzer);
+    free(intBuffer);
+    free(floatBuffer);
 
-    return analyzer->bpm;
+    return bpm;
 }
 
-CrossExample::~CrossExample() {
+TempoFetcher::~TempoFetcher() {
 
 }
 
-static CrossExample *example = NULL;
+static TempoFetcher *example = NULL;
 
-// CrossExample - Create the DJ app and initialize the players.
+// TempoFetcher - Create the DJ app and initialize the players.
 extern "C" JNIEXPORT void
-Java_com_barad_beatrunner_MainActivity_CrossExample(JNIEnv * __unused env, jobject __unused obj) {
-    example = new CrossExample();
+Java_com_barad_beatrunner_MainActivity_TempoFetcher(JNIEnv * __unused env, jobject __unused obj) {
+    example = new TempoFetcher();
 }
 
 extern "C" JNIEXPORT jfloat JNICALL

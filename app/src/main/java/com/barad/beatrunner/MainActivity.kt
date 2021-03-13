@@ -35,7 +35,7 @@ class MainActivity : AppCompatActivity() {
             val musicList = MusicStore().getAllMusicFromDevice(this)
 
             player = SimpleExoPlayer.Builder(this).build()
-            val mediaItem: MediaItem = MediaItem.fromUri(musicList[0].uri)
+            val mediaItem: MediaItem = MediaItem.fromUri(musicList[2].uri)
             player.setMediaItem(mediaItem)
             player.prepare()
             playerView = findViewById(R.id.player_view)
@@ -61,14 +61,14 @@ class MainActivity : AppCompatActivity() {
 
             tv_temmpo = findViewById(R.id.tv_tempo)
 
-
+            Log.i("barad-log", musicList[2].path)
             // Initialize the players and effects, and start the audio engine.
             Log.i("barad-log", "Starting native code")
-            System.loadLibrary("CrossExample")
+            System.loadLibrary("TempoFetcher")
             Log.i("barad-log", "Loaded library")
-            CrossExample()
+            TempoFetcher()
             Log.i("barad-log", "Called constructor")
-            getTempo(musicList[0].path)
+            getTempo(musicList[2].path)
             Log.i("barad-log", "called tempo")
         }
 
@@ -96,10 +96,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun getTempo(path: String) {
         tv_temmpo.text = decode(path).toString()
-        Log.i("asd",decode(path).toString())
+        Log.i("barad-log",decode(path).toString())
     }
 
-    private external fun CrossExample();
+    private external fun TempoFetcher();
     private external fun decode(path: String): Float
 
 }
