@@ -8,6 +8,7 @@ data class Music(
     var artist: String,
     var album: String,
     var uri: Uri,
-    var path: String) {
-    override fun toString(): String = title + " - " + artist + " / " + uri
+    var path: String,
+    var tempo: Float) {
+    override fun toString(): String = "$artist - $title t: $tempo at: $uri | $path id: $id"
 }

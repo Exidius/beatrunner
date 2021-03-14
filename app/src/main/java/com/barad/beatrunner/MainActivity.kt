@@ -11,10 +11,15 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.barad.beatrunner.data.MusicStore
+import com.barad.beatrunner.models.Music
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.PlaybackParameters
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.ui.PlayerControlView
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 
 class MainActivity : AppCompatActivity() {
@@ -68,8 +73,28 @@ class MainActivity : AppCompatActivity() {
             Log.i("barad-log", "Loaded library")
             TempoFetcher()
             Log.i("barad-log", "Called constructor")
-            getTempo(musicList[2].path)
+            GlobalScope.launch { getTempo(musicList[2].path) }
             Log.i("barad-log", "called tempo")
+
+            val musics: MutableList<Music> = mutableListOf()
+            var i = 0
+            musicList.forEach {
+                GlobalScope.launch {
+                    i += 1
+                    musics.add(Music(
+                            i.toString(),
+                            it.title,
+                            it.artist,
+                            it.album,
+                            it.uri,
+                            it.path,
+                            getTempo(it.path)
+                    ))
+                    Log.i("barad-log", it.toString())
+                }
+            }
+
+            musics.forEach { Log.i("barad-log-music-list", it.toString()) }
         }
 
     }
@@ -94,9 +119,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getTempo(path: String) {
-        tv_temmpo.text = decode(path).toString()
-        Log.i("barad-log",decode(path).toString())
+    private suspend fun getTempo(path: String): Float {
+        val tempo = decode(path)
+        Log.i("main-getTempo",tempo.toString())
+        return decode(path)
     }
 
     private external fun TempoFetcher();

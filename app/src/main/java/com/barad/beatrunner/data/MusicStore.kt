@@ -41,8 +41,8 @@ class MusicStore {
                 uri = ContentUris.withAppendedId(
                         MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
                         audioCursor.getString(0).toLong()),
-                path =  audioCursor.getString(5)
-                )
+                path =  audioCursor.getString(5),
+                tempo = -1.0f)
 
                 musicList.add(music)
 
