@@ -60,14 +60,14 @@ TempoFetcher::~TempoFetcher() {
 
 static TempoFetcher *example = NULL;
 
-// TempoFetcher - Create the DJ app and initialize the players.
+// TempoFetcher - Create the app and initialize the players.
 extern "C" JNIEXPORT void
-Java_com_barad_beatrunner_MainActivity_TempoFetcher(JNIEnv * __unused env, jobject __unused obj) {
+Java_com_barad_beatrunner_data_MusicStore_tempoFetcher(JNIEnv * __unused env, jobject __unused obj) {
     example = new TempoFetcher();
 }
 
 extern "C" JNIEXPORT jfloat JNICALL
-Java_com_barad_beatrunner_MainActivity_decode(JNIEnv *env, jobject thiz, jstring audioPath) {
+Java_com_barad_beatrunner_data_MusicStore_decode(JNIEnv *env, jobject thiz, jstring audioPath) {
     const char *path = env->GetStringUTFChars(audioPath, JNI_FALSE);
     return example->decode(path);
 }
