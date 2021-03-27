@@ -9,13 +9,16 @@ import android.provider.Settings
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.room.Room
 import com.barad.beatrunner.models.Music
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
-class MusicStore {
+class MusicStore(
+    private val context: Context,
+    private val musicDao: MusicDao) {
 
     init {
         System.loadLibrary("TempoFetcher")
@@ -30,8 +33,9 @@ class MusicStore {
     val fetchFinished
         get() = _fetchFinished
 
-    fun getAllMusicFromDevice(context: Context, fetchTempo: Boolean) {
+    fun getAllMusicFromDevice(fetchTempo: Boolean) {
         val musicList: ArrayList<Music> = arrayListOf()
+        //val musicsInDb = musicDao.getAll()
 
         val audioCollection =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -55,18 +59,19 @@ class MusicStore {
             GlobalScope.launch {
             while (audioCursor.moveToNext()) {
                 val music = Music(
-                        id = audioCursor.getString(0),
+                        id = audioCursor.getString(0).toInt(),
                         title = audioCursor.getString(1),
                         artist = audioCursor.getString(2),
                         album = audioCursor.getString(3),
                         uri = ContentUris.withAppendedId(
                                 MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                                audioCursor.getString(0).toLong()),
+                                audioCursor.getString(0).toLong()).toString(),
                         path = audioCursor.getString(5),
                         tempo = if (fetchTempo) fetchTempo(audioCursor.getString(5)) else -1f)
 
                     musicList.add(music)
                     _musicList.postValue(musicList)
+                    musicDao.insert(music)
                 }
             }.invokeOnCompletion { _fetchFinished.postValue(true) }
         }

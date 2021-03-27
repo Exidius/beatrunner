@@ -3,6 +3,8 @@ plugins {
     id 'kotlin-android'
 }
 
+apply plugin: 'kotlin-kapt'
+
 def superpowered_sdk_path = new File(projectDir, '../Superpowered')
 
 android {
@@ -49,8 +51,12 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
+    packagingOptions {
+        exclude 'META-INF/atomicfu.kotlin_module'
+    }
+
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = "1.8"
     }
 }
 
@@ -69,4 +75,8 @@ dependencies {
 
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.9'
     implementation 'com.google.android.exoplayer:exoplayer:2.13.2'
+
+    implementation "androidx.room:room-ktx:2.2.6"
+    kapt "androidx.room:room-compiler:2.2.6"
+    androidTestImplementation "androidx.room:room-testing:2.2.6"
 }

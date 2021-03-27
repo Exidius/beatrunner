@@ -15,10 +15,15 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.room.Room
+import com.barad.beatrunner.data.AppDatabase
 import com.barad.beatrunner.data.MusicStore
 import com.google.android.exoplayer2.PlaybackParameters
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.ui.PlayerControlView
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDateTime
 import java.util.*
@@ -53,8 +58,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val db = Room.databaseBuilder(this, AppDatabase::class.java, "db1").build()
+        val musicDao = db.musicDao()
+
         if(isStoragePermissionGranted()) {
-            val musicStore = MusicStore()
+            val musicStore = MusicStore(this, musicDao)
 
             musicStore.musicList.observe(this, { list ->
                 Log.d("barad-log-main", "----music list---")
@@ -64,7 +72,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 Log.d("barad-log-main", "-----------------")
             })
 
-            //musicStore.getAllMusicFromDevice(this,true)
+            //musicStore.getAllMusicFromDevice(true)
+
+            GlobalScope.launch(Dispatchers.Default) {
+                val musicList = musicDao.getAll()
+            }
 
             player = SimpleExoPlayer.Builder(this).build()
             //val mediaItem: MediaItem = MediaItem.fromUri(musicList[2].uri)
