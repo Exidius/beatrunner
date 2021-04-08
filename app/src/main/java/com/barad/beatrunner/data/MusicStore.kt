@@ -33,9 +33,14 @@ class MusicStore(
     val fetchFinished
         get() = _fetchFinished
 
+    private var _musicsInDb = listOf<Music>()
+
     fun getAllMusicFromDevice(fetchTempo: Boolean) {
         val musicList: ArrayList<Music> = arrayListOf()
-        //val musicsInDb = musicDao.getAll()
+        GlobalScope.launch {
+            _musicsInDb = musicDao.getAll()
+        }
+
 
         val audioCollection =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -71,7 +76,9 @@ class MusicStore(
 
                     musicList.add(music)
                     _musicList.postValue(musicList)
-                    musicDao.insert(music)
+                    if(!_musicsInDb.contains(music)) {
+                        musicDao.insert(music)
+                    }
                 }
             }.invokeOnCompletion { _fetchFinished.postValue(true) }
         }

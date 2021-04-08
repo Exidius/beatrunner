@@ -17,7 +17,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.room.Room
 import com.barad.beatrunner.data.AppDatabase
+import com.barad.beatrunner.data.MusicDao
 import com.barad.beatrunner.data.MusicStore
+import com.barad.beatrunner.models.Music
+import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.PlaybackParameters
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.ui.PlayerControlView
@@ -27,6 +30,7 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDateTime
 import java.util.*
+import kotlin.math.abs
 import kotlin.math.sqrt
 
 
@@ -54,12 +58,16 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var asdText = ""
     private var latest = Instant.now()
 
+    var mediaItem: MediaItem? = null
+
+    private lateinit var musicDao: MusicDao
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         val db = Room.databaseBuilder(this, AppDatabase::class.java, "db1").build()
-        val musicDao = db.musicDao()
+        musicDao = db.musicDao()
 
         if(isStoragePermissionGranted()) {
             val musicStore = MusicStore(this, musicDao)
@@ -74,14 +82,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
             //musicStore.getAllMusicFromDevice(true)
 
-            GlobalScope.launch(Dispatchers.Default) {
-                val musicList = musicDao.getAll()
-            }
+
 
             player = SimpleExoPlayer.Builder(this).build()
-            //val mediaItem: MediaItem = MediaItem.fromUri(musicList[2].uri)
-            //player.setMediaItem(mediaItem)
-            //player.prepare()
+
             playerView = findViewById(R.id.player_view)
             playerView.showTimeoutMs = 0
             playerView.player = player
@@ -98,7 +102,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             btn_reset.setOnClickListener{
                 speed = 1.0F
                 player.setPlaybackParameters(PlaybackParameters(speed))
-                if (musicStore.fetchFinished.value == true) Log.d("barad-log-main", "FINISH") else Log.d("barad-log-main", "NOT finished")
             }
             btn_faster.setOnClickListener{
                 speed += 0.1F
@@ -111,7 +114,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
             sensorGyro = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
             sensorAcc = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-            sensorLinAcc = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+            sensorLinAcc = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
 
 
         }
@@ -123,7 +126,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         // DELAY
         sensorManager.registerListener(this,sensorGyro,SensorManager.SENSOR_DELAY_FASTEST)
-        sensorManager.registerListener(this,sensorAcc,SensorManager.SENSOR_DELAY_FASTEST)
+        sensorManager.registerListener(this,sensorAcc,SensorManager.SENSOR_DELAY_NORMAL)
         sensorManager.registerListener(this,sensorLinAcc,SensorManager.SENSOR_DELAY_FASTEST)
 
     }
@@ -162,6 +165,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     val x: Float = event.values[0]
                     val y: Float = event.values[1]
                     val z: Float = event.values[2]
+                    var tempo = 172f
 
                     sensorQueue.add(sqrt(x*x+y*y+z*z))
                     if (sensorQueue.average() > 20) {
@@ -180,13 +184,41 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     if (sensorQueue.size > 10) { sensorQueue.remove() }
                     if (timeQueue.size > 10) { timeQueue.remove() }
 
-                    if (timeQueue.size > 5) {
+                    if (timeQueue.size > 2) {
                         val list:List<Instant> = timeQueue.map { x -> x }
                         var sum: Long = 0
                         for(i in 1 until list.size) {
                             sum += list[i].toEpochMilli()-list[i-1].toEpochMilli()
                         }
-                        tv_gyro3.setText((60f/(sum/list.size)*1000f).toString())
+                        tempo = (60f/(sum/list.size)*1000f)
+                        tv_gyro3.setText(tempo.toString())
+
+
+
+                        var musicList = listOf<Music>()
+
+                        GlobalScope.launch(Dispatchers.Default) {
+                            musicList = musicDao.getAll()
+                        }.invokeOnCompletion {
+                            var closestTempo = 0f
+                            var selected = musicList.get(0)
+                            musicList.forEach {
+                                if (abs(it.tempo-tempo) < abs(closestTempo-tempo)) {
+                                    closestTempo = it.tempo
+                                    mediaItem = MediaItem.fromUri(it.uri)
+                                }
+                            }
+                        }
+
+                        Log.d("barad-select-s2", mediaItem.toString())
+
+                        if (player.currentMediaItem != mediaItem) {
+                            mediaItem?.let { player.setMediaItem(it) }
+                            player.prepare()
+                            player.play()
+                        }
+
+
                     }
 
                     tv_gyro.setText("%.2f".format(x) + " / " + "%.2f".format(y) + " / " + "%.2f".format(z))
