@@ -45,7 +45,7 @@ class MusicStore(
         val audioCollection =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 MediaStore.Audio.Media.getContentUri(
-                    MediaStore.VOLUME_EXTERNAL_PRIMARY
+                    MediaStore.VOLUME_EXTERNAL
                 )
             } else {
                 MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
@@ -62,8 +62,8 @@ class MusicStore(
         val audioCursor: Cursor? = context.contentResolver.query(audioCollection, proj, null, null, null)
         if (audioCursor != null) {
             GlobalScope.launch {
-            while (audioCursor.moveToNext()) {
-                val music = Music(
+                while (audioCursor.moveToNext()) {
+                    val music = Music(
                         id = audioCursor.getString(0).toInt(),
                         title = audioCursor.getString(1),
                         artist = audioCursor.getString(2),
@@ -74,10 +74,14 @@ class MusicStore(
                         path = audioCursor.getString(5),
                         tempo = if (fetchTempo) fetchTempo(audioCursor.getString(5)) else -1f)
 
-                    musicList.add(music)
-                    _musicList.postValue(musicList)
-                    if(!_musicsInDb.contains(music)) {
-                        musicDao.insert(music)
+                    // Only save audio if it is longer than 30 seconds = 30000 miliseconds
+                    // Todo: only analise bpm if its longer than 30 secs
+                    if(audioCursor.getString(4).toLong() > 30000) {
+                        musicList.add(music)
+                        _musicList.postValue(musicList)
+                        if (!_musicsInDb.contains(music)) {
+                            musicDao.insert(music)
+                        }
                     }
                 }
             }.invokeOnCompletion { _fetchFinished.postValue(true) }

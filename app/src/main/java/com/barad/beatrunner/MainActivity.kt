@@ -46,14 +46,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btn_slower: Button
     private lateinit var btn_faster: Button
     private lateinit var btn_reset: Button
-    private lateinit var tv_tempo: TextView
-    private var speed = 1.0F
+    private lateinit var tv_title: TextView
 
     private lateinit var tv_gyro: TextView
     private lateinit var tv_gyro2: TextView
     private lateinit var tv_gyro3: TextView
-
-    private var asdText = ""
 
     private lateinit var musicDao: MusicDao
 
@@ -75,7 +72,7 @@ class MainActivity : AppCompatActivity() {
                 Log.d("barad-log-main", "-----------------")
             })*/
 
-            //musicStore.getAllMusicFromDevice(true)
+            musicStore.getAllMusicFromDevice(true)
 
             player = SimpleExoPlayer.Builder(this).build()
 
@@ -87,19 +84,7 @@ class MainActivity : AppCompatActivity() {
             btn_faster = findViewById(R.id.btn_faster)
             btn_reset = findViewById(R.id.btn_reset)
 
-            btn_slower.setOnClickListener{
-                speed -= 0.1F
-                player.setPlaybackParameters(PlaybackParameters(speed))
-            }
-            btn_reset.setOnClickListener{
-                speed = 1.0F
-                player.setPlaybackParameters(PlaybackParameters(speed))
-            }
-            btn_faster.setOnClickListener{
-                speed += 0.1F
-                player.setPlaybackParameters(PlaybackParameters(speed))
-            }
-
+            tv_title = findViewById(R.id.tv_title)
             tv_gyro = findViewById(R.id.tv_gyro)
             tv_gyro2 = findViewById(R.id.tv_gyro2)
             tv_gyro3 = findViewById(R.id.tv_gyro3)
@@ -107,9 +92,17 @@ class MainActivity : AppCompatActivity() {
             sensorService = SensorService(getSystemService(Context.SENSOR_SERVICE) as SensorManager)
             musicService = MusicService(musicDao, player)
 
+            sensorService.steps.observe(this, {
+                tv_gyro.setText(it.toString())
+            })
+
             sensorService.tempo.observe(this, {
                 tv_gyro2.setText(it.toString())
                 musicService.onTempoChange(it)
+            })
+
+            musicService.currentMusic.observe(this, {
+                tv_title.setText("${it.artist} - ${it.title}")
             })
         }
 

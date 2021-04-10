@@ -24,6 +24,10 @@ class SensorService(private val sensorManager: SensorManager) : SensorEventListe
     val tempo
         get() = _tempo
 
+    private val _steps = MutableLiveData<Int>()
+    val steps
+        get() = _steps
+
     private var sensorGyro: Sensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
     private var sensorAcc: Sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
     private var sensorLinAcc: Sensor = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
@@ -35,6 +39,7 @@ class SensorService(private val sensorManager: SensorManager) : SensorEventListe
 
     init {
         tempo.value = 150f
+        steps.value = 0
     }
 
     // Use in onStart()
@@ -59,11 +64,11 @@ class SensorService(private val sensorManager: SensorManager) : SensorEventListe
 
                     sensorQueue.add(sqrt(x*x+y*y+z*z))
                     if (sensorQueue.average() > 20) {
-                        var diff = Instant.now().toEpochMilli() - latest.toEpochMilli()
+                        val diff = Instant.now().toEpochMilli() - latest.toEpochMilli()
                         if (diff > 150) {
                             latest = Instant.now()
                             timeQueue.add(Instant.now())
-
+                            steps.value = steps.value?.plus(1)
                         }
                     }
 
@@ -76,7 +81,7 @@ class SensorService(private val sensorManager: SensorManager) : SensorEventListe
                         for(i in 1 until timeInstantList.size) {
                             sum += timeInstantList[i].toEpochMilli()-timeInstantList[i-1].toEpochMilli()
                         }
-                        tempo.value = (60f/(sum/timeInstantList.size)*1000f)
+                        tempo.value = (60f/(sum/(timeInstantList.size-1))*1000f)
                     }
                 }
                 else -> {
