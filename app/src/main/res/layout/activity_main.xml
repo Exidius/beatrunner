@@ -27,10 +27,11 @@
         android:id="@+id/tv_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="120dp"
+        android:layout_marginStart="0dp"
+        android:layout_marginTop="32dp"
         android:text="TextView"
-        app:layout_constraintBottom_toBottomOf="@+id/player_view"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="@+id/tv_music_tempo"
+        app:layout_constraintTop_toBottomOf="@+id/tv_music_tempo" />
 
     <TextView
         android:id="@+id/tv_tempo"
@@ -46,7 +47,8 @@
         android:id="@+id/tv_music_tempo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="79dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="140dp"
         android:text="TextView"
         app:layout_constraintBottom_toTopOf="@+id/player_view"
         app:layout_constraintStart_toStartOf="parent" />

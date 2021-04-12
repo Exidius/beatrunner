@@ -16,6 +16,7 @@ import androidx.room.Room
 import com.barad.beatrunner.data.AppDatabase
 import com.barad.beatrunner.data.MusicDao
 import com.barad.beatrunner.data.MusicStore
+import com.barad.beatrunner.service.MusicEventListener
 import com.barad.beatrunner.service.MusicService
 import com.barad.beatrunner.service.SensorService
 import com.google.android.exoplayer2.SimpleExoPlayer
@@ -52,8 +53,14 @@ class MainActivity : AppCompatActivity() {
             musicStore.getAllMusicFromDevice(true)
 
             player = SimpleExoPlayer.Builder(this).build()
+            musicService = MusicService(musicDao, player)
+            val musicEventListener = MusicEventListener(player, musicService, musicDao)
+            player.addListener(musicEventListener)
 
             playerView = findViewById(R.id.player_view)
+            playerView.showShuffleButton = true
+            playerView.setShowFastForwardButton(false)
+            playerView.setShowRewindButton(false)
             playerView.showTimeoutMs = 0
             playerView.player = player
 
@@ -66,10 +73,12 @@ class MainActivity : AppCompatActivity() {
             inputTempo = findViewById(R.id.et_tempo)
 
             sensorService = SensorService(getSystemService(Context.SENSOR_SERVICE) as SensorManager)
-            musicService = MusicService(musicDao, player)
 
             btnTempo.setOnClickListener {
-                inputTempo.text.toString().toFloatOrNull()?.let { it1 -> musicService.onTempoChange(it1) }
+                inputTempo.text.toString().toFloatOrNull()?.let {
+                    it1 -> musicService.onTempoChange(it1)
+                }
+                tvTempo.setText(inputTempo.text.toString())
             }
 
             sensorService.steps.observe(this, {
