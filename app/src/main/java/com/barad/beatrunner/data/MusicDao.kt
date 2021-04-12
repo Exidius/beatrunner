@@ -10,8 +10,11 @@ interface MusicDao {
     @Query("SELECT * FROM music")
     fun getAll(): List<Music>
 
-    @Query("SELECT * FROM music WHERE uri LIKE :id")
-    fun getById(id: String): Music
+    @Query("SELECT * FROM music WHERE id LIKE :id")
+    fun getById(id: Int): Music
+
+    @Query("DELETE FROM music WHERE id LIKE :id")
+    fun deleteById(id: Int)
 
     @Insert
     suspend fun insertAll(vararg musics: Music)

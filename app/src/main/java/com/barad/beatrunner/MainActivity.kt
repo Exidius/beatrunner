@@ -50,7 +50,7 @@ class MainActivity : AppCompatActivity() {
         if(isStoragePermissionGranted()) {
             val musicStore = MusicStore(this, musicDao)
 
-            musicStore.getAllMusicFromDevice(true)
+            //musicStore.getAllMusicFromDevice(true)
 
             player = SimpleExoPlayer.Builder(this).build()
             musicService = MusicService(musicDao, player)
