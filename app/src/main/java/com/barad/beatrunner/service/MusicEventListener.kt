@@ -32,7 +32,7 @@ class MusicEventListener(private val player: SimpleExoPlayer,
         when (error.type) {
             ExoPlaybackException.TYPE_SOURCE -> {
                 GlobalScope.launch {
-                    musicDao.deleteById(musicService.currentMusic.value!!.id)
+                    musicDao.deleteById(musicService.currentMusic.value!!.musicId)
                 }
                 player.next()
                 player.prepare()

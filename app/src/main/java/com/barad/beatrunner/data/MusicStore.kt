@@ -64,7 +64,7 @@ class MusicStore(
             GlobalScope.launch {
                 while (audioCursor.moveToNext()) {
                     val music = Music(
-                        id = audioCursor.getString(0).toInt(),
+                        musicId = audioCursor.getString(0).toInt(),
                         title = audioCursor.getString(1),
                         artist = audioCursor.getString(2),
                         album = audioCursor.getString(3),
