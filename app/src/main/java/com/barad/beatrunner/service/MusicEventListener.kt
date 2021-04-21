@@ -18,9 +18,8 @@ class MusicEventListener(private val player: SimpleExoPlayer,
 
     override fun onMediaItemTransition(@Nullable mediaItem: MediaItem?, @MediaItemTransitionReason reason: Int) {
         if (mediaItem != null) {
-            GlobalScope.launch {
-                musicService.currentMusic.postValue(musicDao.getById(mediaItem.mediaId.split('/').last().toInt()))
-            }
+            musicService.currentMusic.postValue(musicService.musicList.find { (mediaItem.mediaId.split('/').last().toInt()) == it.musicId })
+            var asd = 0
         }
         player.prepare()
         player.seekTo(15000)

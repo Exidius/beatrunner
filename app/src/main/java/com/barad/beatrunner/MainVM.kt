@@ -20,11 +20,11 @@ class MainVM(
 ) : ViewModel() {
     lateinit var sensorService: SensorService
     val player: SimpleExoPlayer = SimpleExoPlayer.Builder(application).build()
-    val musicService = MusicService(musicDao, player)
+    //val musicService = MusicService(musicDao)
 
     init{
-        val musicEventListener = MusicEventListener(player, musicService, musicDao)
-        player.addListener(musicEventListener)
+        //val musicEventListener = MusicEventListener(player, musicService, musicDao)
+       // player.addListener(musicEventListener)
     }
 
 }

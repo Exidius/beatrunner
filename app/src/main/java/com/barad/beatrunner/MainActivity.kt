@@ -2,11 +2,14 @@ package com.barad.beatrunner
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.ComponentName
 import android.content.Context
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.hardware.SensorManager
 import android.os.Build
 import android.os.Bundle
+import android.os.IBinder
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
@@ -28,42 +31,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var sensorService: SensorService
     private lateinit var musicService: MusicService
 
-    private lateinit var playerView: PlayerControlView
-    private lateinit var player: SimpleExoPlayer
-
-    private lateinit var btnTempo: Button
-    private lateinit var tv_title: TextView
-    private lateinit var tvTempo: TextView
-    private lateinit var tvSteps: TextView
-    private lateinit var tvMusicTempo: TextView
-    private lateinit var inputTempo: EditText
-
-    private lateinit var musicDao: MusicDao
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
     }
-
-
-    @SuppressLint("ObsoleteSdkInt")
-    fun isStoragePermissionGranted(): Boolean {
-        return if (Build.VERSION.SDK_INT >= 23) {
-            if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
-                == PackageManager.PERMISSION_GRANTED
-            ) {
-                true
-            } else {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
-                    1
-                )
-                false
-            }
-        } else {
-            true
-        }
-    }
-
 }
