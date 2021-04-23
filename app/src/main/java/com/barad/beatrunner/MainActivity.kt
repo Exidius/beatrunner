@@ -29,7 +29,6 @@ import com.google.android.exoplayer2.ui.PlayerControlView
 class MainActivity : AppCompatActivity() {
 
     private lateinit var sensorService: SensorService
-    private lateinit var musicService: MusicService
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

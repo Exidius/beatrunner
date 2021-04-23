@@ -1,10 +1,14 @@
 package com.barad.beatrunner.service
 
+import android.app.Service
 import android.content.Context
+import android.content.Intent
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.os.Binder
+import android.os.IBinder
 import android.util.Log
 import androidx.core.content.ContextCompat.getSystemService
 import androidx.lifecycle.MutableLiveData
@@ -18,19 +22,26 @@ import java.util.*
 import kotlin.math.abs
 import kotlin.math.sqrt
 
-class SensorService(private val sensorManager: SensorManager) : SensorEventListener {
+class SensorService() : Service(), SensorEventListener {
 
-    private val _tempo = MutableLiveData<Float>()
-    val tempo
-        get() = _tempo
+    inner class SensorServiceBinder : Binder() {
+        val service
+            get() = this@SensorService
+    }
+
+    private val _sensorTempo = MutableLiveData<Float>()
+    val sensorTempo
+        get() = _sensorTempo
 
     private val _steps = MutableLiveData<Int>()
     val steps
         get() = _steps
 
-    private var sensorGyro: Sensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
-    private var sensorAcc: Sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-    private var sensorLinAcc: Sensor = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
+    private var sensorManager: SensorManager? = null
+
+    private var sensorGyro: Sensor? = null
+    private var sensorAcc: Sensor? = null
+    private var sensorLinAcc: Sensor? = null
 
     val sensorQueue: Queue<Float> = LinkedList()
     val timeQueue: Queue<Instant> = LinkedList()
@@ -38,20 +49,53 @@ class SensorService(private val sensorManager: SensorManager) : SensorEventListe
     private var latest = Instant.now()
 
     init {
-        tempo.value = 150f
+        sensorTempo.value = 150f
         steps.value = 0
     }
 
-    // Use in onStart()
-    fun register() {
-        sensorManager.registerListener(this,sensorGyro,SensorManager.SENSOR_DELAY_FASTEST)
-        sensorManager.registerListener(this,sensorAcc,SensorManager.SENSOR_DELAY_NORMAL)
-        sensorManager.registerListener(this,sensorLinAcc,SensorManager.SENSOR_DELAY_FASTEST)
+    override fun onBind(intent: Intent?): IBinder? {
+        intent?.let {
+            registerManager()
+        }
+        return SensorServiceBinder()
     }
 
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        intent?.let {
+            registerManager()
+        }
+
+        return START_NOT_STICKY
+    }
+
+    private fun registerManager() {
+        sensorManager = application.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        sensorGyro = sensorManager!!.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
+        sensorAcc = sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        sensorLinAcc = sensorManager!!.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
+
+        sensorManager!!.registerListener(this,sensorGyro,SensorManager.SENSOR_DELAY_FASTEST)
+        sensorManager!!.registerListener(this,sensorAcc,SensorManager.SENSOR_DELAY_NORMAL)
+        sensorManager!!.registerListener(this,sensorLinAcc,SensorManager.SENSOR_DELAY_FASTEST)
+    }
+
+
+
+    // Use in onStart()
+//    fun register() {
+//        sensorManager.registerListener(this,sensorGyro,SensorManager.SENSOR_DELAY_FASTEST)
+//        sensorManager.registerListener(this,sensorAcc,SensorManager.SENSOR_DELAY_NORMAL)
+//        sensorManager.registerListener(this,sensorLinAcc,SensorManager.SENSOR_DELAY_FASTEST)
+//    }
+
     // Use in onStop()
-    fun unregister() {
-        sensorManager.unregisterListener(this)
+//    fun unregister() {
+//        sensorManager.unregisterListener(this)
+//    }
+
+    override fun onDestroy() {
+        sensorManager?.unregisterListener(this)
+        super.onDestroy()
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
@@ -81,7 +125,7 @@ class SensorService(private val sensorManager: SensorManager) : SensorEventListe
                         for(i in 1 until timeInstantList.size) {
                             sum += timeInstantList[i].toEpochMilli()-timeInstantList[i-1].toEpochMilli()
                         }
-                        tempo.value = (60f/(sum/(timeInstantList.size-1))*1000f)
+                        sensorTempo.value = (60f/(sum/(timeInstantList.size-1))*1000f)
                     }
                 }
                 else -> {
@@ -91,6 +135,5 @@ class SensorService(private val sensorManager: SensorManager) : SensorEventListe
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-
     }
 }

@@ -35,11 +35,11 @@ import com.google.android.exoplayer2.ui.PlayerControlView
 
 class MainFragment : Fragment() {
 
-    private lateinit var sensorService: SensorService
+    private var musicService: MusicService? = null
 
-//    private lateinit var viewModel: MainVM
+    private lateinit var viewModel: MainVM
+
     private lateinit var playerView: PlayerControlView
-    private lateinit var musicService: MusicService
 
     private lateinit var btnTempo: Button
     private lateinit var tv_title: TextView
@@ -50,22 +50,26 @@ class MainFragment : Fragment() {
 
     private lateinit var application: Application
 
-    private val connection = object : ServiceConnection {
+    val connection = object : ServiceConnection {
         override fun onServiceDisconnected(name: ComponentName?) {
-
         }
-
-        /**
-         * Called after a successful bind with our VideoService.
-         */
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            //We expect the service binder to be the video services binder.
-            //As such we cast.
             if (service is MusicService.MusicServiceBinder) {
-                //Then we simply set the exoplayer instance on this view.
-                //Notice we are only getting information.
                 playerView.player = service.getPlayerInstance()
                 musicService = service.service
+
+                musicService?.steps?.observe(viewLifecycleOwner, {
+                    tvTempo.setText(it.toString())
+                })
+
+                musicService?.sensorTempo?.observe(viewLifecycleOwner, {
+                    tvSteps.setText(it.toString())
+                })
+
+                musicService?.currentMusic?.observe(viewLifecycleOwner, {
+                    tv_title.setText("${it.artist} - ${it.title}")
+                    tvMusicTempo.setText(it.tempo.toString())
+                })
             }
         }
     }
@@ -78,22 +82,16 @@ class MainFragment : Fragment() {
         application = requireNotNull(this.activity).application
 
         if(isStoragePermissionGranted()) {
-            sensorService = SensorService(application.getSystemService(Context.SENSOR_SERVICE) as SensorManager)
-            sensorService.register()
-            val musicDao = AppDatabase.getInstance(application).musicDao()
-            val musicStore = MusicStore(application, musicDao)
-            val mainVMFactory = MainVMFactory(application, musicDao, musicStore)
-
-            //musicStore.getAllMusicFromDevice(true)
-
-//            viewModel = ViewModelProvider(this, mainVMFactory).get(MainVM::class.java)
-//            viewModel.sensorService = sensorService
 
             playerView = view.findViewById(R.id.player_view)
             playerView.showShuffleButton = true
             playerView.setShowFastForwardButton(false)
             playerView.setShowRewindButton(false)
             playerView.showTimeoutMs = 0
+
+            val mainVMFactory = MainVMFactory(application, playerView)
+
+            viewModel = ViewModelProvider(this, mainVMFactory).get(MainVM::class.java)
 
             btnTempo = view.findViewById(R.id.btn_setTempo)
 
@@ -106,39 +104,15 @@ class MainFragment : Fragment() {
             val intent = Intent(requireActivity(), MusicService::class.java)
             intent.putExtra("tempo", 120f)
 
-            requireActivity().bindService(intent, connection, Context.BIND_AUTO_CREATE)
-
-
-
-            btnTempo.setOnClickListener {
-                requireActivity().startService(Intent(requireActivity(), MusicService::class.java).apply {
-                    putExtra("start",0)
-                })
-            }
-
+            requireActivity().startService(Intent(requireActivity(), MusicService::class.java))
 
             btnTempo.setOnClickListener {
                 inputTempo.text.toString().toFloatOrNull()?.let { it1 ->
-                    val intent = Intent(requireActivity(), MusicService::class.java)
-                    intent.putExtra("tempo", it1)
-                    requireActivity().bindService(intent, connection, Context.BIND_AUTO_CREATE)
+                    val intent2 = Intent(requireActivity(), MusicService::class.java)
+                    intent2.putExtra("tempo", it1)
+                    requireActivity().bindService(intent2, connection, Context.BIND_AUTO_CREATE)
                 }
-                tvTempo.setText(inputTempo.text.toString())
             }
-
-//            viewModel.sensorService.steps.observe(viewLifecycleOwner, {
-//                tvTempo.setText(it.toString())
-//            })
-//
-//            viewModel.sensorService.tempo.observe(viewLifecycleOwner, {
-//                tvSteps.setText(it.toString())
-//                viewModel.musicService.onTempoChange(it)
-//            })
-//
-//            musicService.currentMusic.observe(viewLifecycleOwner, {
-//                tv_title.setText("${it.artist} - ${it.title}")
-//                tvMusicTempo.setText(it.tempo.toString())
-//            })
         }
         return view
     }

@@ -3,8 +3,13 @@ package com.barad.beatrunner.service
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.os.Binder
 import android.os.IBinder
 import android.util.Log
@@ -14,17 +19,36 @@ import com.barad.beatrunner.R
 import com.barad.beatrunner.data.AppDatabase
 import com.barad.beatrunner.data.MusicDao
 import com.barad.beatrunner.models.Music
-import com.google.android.exoplayer2.MediaItem
-import com.google.android.exoplayer2.PlaybackParameters
-import com.google.android.exoplayer2.Player
-import com.google.android.exoplayer2.SimpleExoPlayer
+import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.ui.PlayerNotificationManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.util.*
 import kotlin.math.abs
+import kotlin.math.sqrt
 
-class MusicService : Service() {
+class MusicService : Service(), SensorEventListener {
+
+    private val _sensorTempo = MutableLiveData<Float>()
+    val sensorTempo
+        get() = _sensorTempo
+
+    private val _steps = MutableLiveData<Int>()
+    val steps
+        get() = _steps
+
+    private var sensorManager: SensorManager? = null
+
+    private var sensorGyro: Sensor? = null
+    private var sensorAcc: Sensor? = null
+    private var sensorLinAcc: Sensor? = null
+
+    val sensorQueue: Queue<Float> = LinkedList()
+    val timeQueue: Queue<Instant> = LinkedList()
+
+    private var latest = Instant.now()
 
     private lateinit var player: SimpleExoPlayer
     private lateinit var musicDao: MusicDao
@@ -44,6 +68,8 @@ class MusicService : Service() {
 
     init{
         currentMusic.value = Music(Int.MAX_VALUE,"Title","Artist","Album","URI","PATH",0f)
+        sensorTempo.value = 150f
+        steps.value = 0
     }
 
     fun onTempoChange(tempo: Float) {
@@ -125,8 +151,8 @@ class MusicService : Service() {
     override fun onBind(intent: Intent?): IBinder? {
         intent?.let {
             onTempoChange(intent.getFloatExtra("tempo",150f))
-            //musicDao = AppDatabase.getInstance(applicationContext).musicDao()
             displayNotification()
+            registerManager()
         }
         return MusicServiceBinder()
     }
@@ -142,8 +168,8 @@ class MusicService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         intent?.let {
             onTempoChange(intent.getFloatExtra("start",120f))
-            //musicDao = AppDatabase.getInstance(applicationContext).musicDao()
             displayNotification()
+            registerManager()
         }
 
         return START_NOT_STICKY
@@ -157,47 +183,11 @@ class MusicService : Service() {
                     R.string.playback,
                     0,
                     NOTIFICATION_ID,
-                    object : PlayerNotificationManager.MediaDescriptionAdapter {
-
-                        override fun createCurrentContentIntent(player: Player): PendingIntent? {
-                            // return pending intent
-                            return null
-                        }
-
-                        override fun getCurrentContentText(player: Player): String? {
-                            return "${currentMusic.value?.artist}"
-                        }
-
-                        override fun getCurrentContentTitle(player: Player): String {
-                            return "${currentMusic.value?.title}"
-                        }
-
-                        override fun getCurrentLargeIcon(player: Player, callback: PlayerNotificationManager.BitmapCallback): Bitmap? {
-                            return null
-                        }
-                    },
-                    object : PlayerNotificationManager.NotificationListener {
-
-                        override fun onNotificationPosted(notificationId: Int,
-                                                          notification: Notification,
-                                                          ongoing: Boolean) {
-                            super.onNotificationPosted(notificationId, notification, ongoing)
-                            if (!ongoing) {
-                                stopForeground(false)
-                            } else {
-                                startForeground(notificationId, notification)
-                            }
-
-                        }
-
-                        override fun onNotificationCancelled(notificationId: Int,
-                                                             dismissedByUser: Boolean) {
-                            super.onNotificationCancelled(notificationId, dismissedByUser)
-                            stopSelf()
-                        }
-
-                    }
+                    MediaDescriptionAdapter(),
+                    NotificationListener()
             )
+
+            playerNotificationManager?.setControlDispatcher(DefaultControlDispatcher(0,0))
             playerNotificationManager?.setPlayer(player)
         }
     }
@@ -212,7 +202,99 @@ class MusicService : Service() {
     override fun onDestroy() {
         playerNotificationManager?.setPlayer(null)
         playerNotificationManager = null
+        sensorManager?.unregisterListener(this)
         super.onDestroy()
     }
 
+    inner class NotificationListener : PlayerNotificationManager.NotificationListener {
+
+        override fun onNotificationPosted(notificationId: Int,
+                                          notification: Notification,
+                                          ongoing: Boolean) {
+            super.onNotificationPosted(notificationId, notification, ongoing)
+            if (!ongoing) {
+                stopForeground(false)
+            } else {
+                startForeground(notificationId, notification)
+            }
+
+        }
+
+        override fun onNotificationCancelled(notificationId: Int,
+                                             dismissedByUser: Boolean) {
+            super.onNotificationCancelled(notificationId, dismissedByUser)
+            stopSelf()
+        }
+    }
+
+    inner class MediaDescriptionAdapter : PlayerNotificationManager.MediaDescriptionAdapter {
+
+        override fun createCurrentContentIntent(player: Player): PendingIntent? {
+            // return pending intent
+            return null
+        }
+
+        override fun getCurrentContentText(player: Player): String? {
+            return "${currentMusic.value?.artist}"
+        }
+
+        override fun getCurrentContentTitle(player: Player): String {
+            return "${currentMusic.value?.title}"
+        }
+
+        override fun getCurrentLargeIcon(player: Player, callback: PlayerNotificationManager.BitmapCallback): Bitmap? {
+            return null
+        }
+    }
+
+    private fun registerManager() {
+        sensorManager = application.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        sensorGyro = sensorManager!!.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
+        sensorAcc = sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        sensorLinAcc = sensorManager!!.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
+
+        sensorManager!!.registerListener(this,sensorGyro,SensorManager.SENSOR_DELAY_FASTEST)
+        sensorManager!!.registerListener(this,sensorAcc,SensorManager.SENSOR_DELAY_NORMAL)
+        sensorManager!!.registerListener(this,sensorLinAcc,SensorManager.SENSOR_DELAY_FASTEST)
+    }
+
+    override fun onSensorChanged(event: SensorEvent?) {
+        if (event != null) {
+            when (event.sensor.type) {
+                Sensor.TYPE_ACCELEROMETER -> {
+                    val x: Float = event.values[0]
+                    val y: Float = event.values[1]
+                    val z: Float = event.values[2]
+
+                    sensorQueue.add(sqrt(x*x+y*y+z*z))
+                    if (sensorQueue.average() > 20) {
+                        val diff = Instant.now().toEpochMilli() - latest.toEpochMilli()
+                        if (diff > 150) {
+                            latest = Instant.now()
+                            timeQueue.add(Instant.now())
+                            steps.value = steps.value?.plus(1)
+                            sensorTempo.value?.let { onTempoChange(it) }
+                        }
+                    }
+
+                    if (sensorQueue.size > 10) { sensorQueue.remove() }
+                    if (timeQueue.size > 10) { timeQueue.remove() }
+
+                    if (timeQueue.size > 2) {
+                        val timeInstantList:List<Instant> = timeQueue.map { x -> x }
+                        var sum: Long = 0
+                        for(i in 1 until timeInstantList.size) {
+                            sum += timeInstantList[i].toEpochMilli()-timeInstantList[i-1].toEpochMilli()
+                        }
+                        sensorTempo.value = (60f/(sum/(timeInstantList.size-1))*1000f)
+                    }
+                }
+                else -> {
+                }
+            }
+        }
+    }
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+    }
 }
