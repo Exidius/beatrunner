@@ -101,16 +101,14 @@ class MainFragment : Fragment() {
             tvMusicTempo = view.findViewById(R.id.tv_music_tempo)
             inputTempo = view.findViewById(R.id.et_tempo)
 
-            val intent = Intent(requireActivity(), MusicService::class.java)
-            intent.putExtra("tempo", 120f)
 
             requireActivity().startService(Intent(requireActivity(), MusicService::class.java))
+            requireActivity().bindService(Intent(requireActivity(),
+                    MusicService::class.java), connection, Context.BIND_AUTO_CREATE)
 
             btnTempo.setOnClickListener {
                 inputTempo.text.toString().toFloatOrNull()?.let { it1 ->
-                    val intent2 = Intent(requireActivity(), MusicService::class.java)
-                    intent2.putExtra("tempo", it1)
-                    requireActivity().bindService(intent2, connection, Context.BIND_AUTO_CREATE)
+                    musicService?.onTempoChangeFromUi(it1)
                 }
             }
         }

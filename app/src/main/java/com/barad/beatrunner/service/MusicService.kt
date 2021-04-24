@@ -10,8 +10,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-import android.os.Binder
-import android.os.IBinder
+import android.os.*
 import android.util.Log
 import android.widget.RemoteViews
 import androidx.lifecycle.MutableLiveData
@@ -68,11 +67,17 @@ class MusicService : Service(), SensorEventListener {
 
     init{
         currentMusic.value = Music(Int.MAX_VALUE,"Title","Artist","Album","URI","PATH",0f)
-        sensorTempo.value = 150f
+        sensorTempo.value = 0f
         steps.value = 0
     }
 
-    fun onTempoChange(tempo: Float) {
+    fun onTempoChangeFromUi(tempo: Float) {
+        onTempoChange(tempo)
+        timeQueue.clear()
+        sensorTempo.value = tempo
+    }
+
+    private fun onTempoChange(tempo: Float) {
         if(abs(_currentMusic.value!!.tempo - tempo) > 20) {
             while (musicList.isEmpty()) {
                 fetchMusicList()
@@ -82,7 +87,7 @@ class MusicService : Service(), SensorEventListener {
             lastTempo = tempo
             switchMusic(selectNewMusicList(tempo))
         }
-        var speed: Float = 1f//tempo / currentMusic.value!!.tempo //TODO: multiples of 2
+        var speed: Float = tempo / currentMusic.value!!.tempo //TODO: multiples of 2
         Log.d("barad-tempo", speed.toString())
         player.setPlaybackParameters(PlaybackParameters(speed))
     }
@@ -98,7 +103,6 @@ class MusicService : Service(), SensorEventListener {
             } catch (e: Exception) {
                 Log.d("barad-serv", e.toString())
             }
-
         }
     }
 
@@ -148,31 +152,16 @@ class MusicService : Service(), SensorEventListener {
         player.setMediaItems(musicList)
     }
 
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        return START_NOT_STICKY
+    }
+
     override fun onBind(intent: Intent?): IBinder? {
         intent?.let {
-            onTempoChange(intent.getFloatExtra("tempo",150f))
             displayNotification()
             registerManager()
         }
         return MusicServiceBinder()
-    }
-
-    override fun onCreate() {
-        super.onCreate()
-        player = SimpleExoPlayer.Builder(application).build()
-        musicDao = AppDatabase.getInstance(application).musicDao()
-        musicEventListener = MusicEventListener(player,this, musicDao)
-        player.addListener(musicEventListener)
-    }
-
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        intent?.let {
-            onTempoChange(intent.getFloatExtra("start",120f))
-            displayNotification()
-            registerManager()
-        }
-
-        return START_NOT_STICKY
     }
 
     private fun displayNotification() {
@@ -192,59 +181,18 @@ class MusicService : Service(), SensorEventListener {
         }
     }
 
+    override fun onCreate() {
+        super.onCreate()
+        player = SimpleExoPlayer.Builder(application).build()
+        musicDao = AppDatabase.getInstance(application).musicDao()
+        musicEventListener = MusicEventListener(player,this, musicDao)
+        player.addListener(musicEventListener)
+    }
+
     inner class MusicServiceBinder : Binder() {
         fun getPlayerInstance() = player
-        fun getCurrentMusic() = currentMusic
         val service
             get() = this@MusicService
-    }
-
-    override fun onDestroy() {
-        playerNotificationManager?.setPlayer(null)
-        playerNotificationManager = null
-        sensorManager?.unregisterListener(this)
-        super.onDestroy()
-    }
-
-    inner class NotificationListener : PlayerNotificationManager.NotificationListener {
-
-        override fun onNotificationPosted(notificationId: Int,
-                                          notification: Notification,
-                                          ongoing: Boolean) {
-            super.onNotificationPosted(notificationId, notification, ongoing)
-            if (!ongoing) {
-                stopForeground(false)
-            } else {
-                startForeground(notificationId, notification)
-            }
-
-        }
-
-        override fun onNotificationCancelled(notificationId: Int,
-                                             dismissedByUser: Boolean) {
-            super.onNotificationCancelled(notificationId, dismissedByUser)
-            stopSelf()
-        }
-    }
-
-    inner class MediaDescriptionAdapter : PlayerNotificationManager.MediaDescriptionAdapter {
-
-        override fun createCurrentContentIntent(player: Player): PendingIntent? {
-            // return pending intent
-            return null
-        }
-
-        override fun getCurrentContentText(player: Player): String? {
-            return "${currentMusic.value?.artist}"
-        }
-
-        override fun getCurrentContentTitle(player: Player): String {
-            return "${currentMusic.value?.title}"
-        }
-
-        override fun getCurrentLargeIcon(player: Player, callback: PlayerNotificationManager.BitmapCallback): Bitmap? {
-            return null
-        }
     }
 
     private fun registerManager() {
@@ -267,7 +215,7 @@ class MusicService : Service(), SensorEventListener {
                     val z: Float = event.values[2]
 
                     sensorQueue.add(sqrt(x*x+y*y+z*z))
-                    if (sensorQueue.average() > 20) {
+                    if (sensorQueue.average() > 17) {
                         val diff = Instant.now().toEpochMilli() - latest.toEpochMilli()
                         if (diff > 150) {
                             latest = Instant.now()
@@ -295,6 +243,54 @@ class MusicService : Service(), SensorEventListener {
         }
     }
 
+    override fun onDestroy() {
+        playerNotificationManager?.setPlayer(null)
+        playerNotificationManager = null
+        sensorManager?.unregisterListener(this)
+        super.onDestroy()
+    }
+
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+    }
+
+    inner class MediaDescriptionAdapter : PlayerNotificationManager.MediaDescriptionAdapter {
+
+        override fun createCurrentContentIntent(player: Player): PendingIntent? {
+            // return pending intent
+            return null
+        }
+
+        override fun getCurrentContentText(player: Player): String? {
+            return "${sensorTempo.value} - ${steps.value}"
+        }
+
+        override fun getCurrentContentTitle(player: Player): String {
+            return "${currentMusic.value?.artist} - ${currentMusic.value?.title}"
+        }
+
+        override fun getCurrentLargeIcon(player: Player, callback: PlayerNotificationManager.BitmapCallback): Bitmap? {
+            return null
+        }
+    }
+
+    inner class NotificationListener : PlayerNotificationManager.NotificationListener {
+
+        override fun onNotificationPosted(notificationId: Int,
+                                          notification: Notification,
+                                          ongoing: Boolean) {
+            super.onNotificationPosted(notificationId, notification, ongoing)
+            if (!ongoing) {
+                stopForeground(false)
+            } else {
+                startForeground(notificationId, notification)
+            }
+
+        }
+
+        override fun onNotificationCancelled(notificationId: Int,
+                                             dismissedByUser: Boolean) {
+            super.onNotificationCancelled(notificationId, dismissedByUser)
+            stopSelf()
+        }
     }
 }
