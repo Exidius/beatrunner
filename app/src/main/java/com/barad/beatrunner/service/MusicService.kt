@@ -14,6 +14,7 @@ import android.os.*
 import android.util.Log
 import android.widget.RemoteViews
 import androidx.lifecycle.MutableLiveData
+import com.barad.beatrunner.MainActivity
 import com.barad.beatrunner.R
 import com.barad.beatrunner.data.AppDatabase
 import com.barad.beatrunner.data.MusicDao
@@ -167,17 +168,55 @@ class MusicService : Service(), SensorEventListener {
     private fun displayNotification() {
         if(playerNotificationManager == null) {
             playerNotificationManager = PlayerNotificationManager.createWithNotificationChannel(
-                    this,
-                    NOTIFICATION_CHANNEL_ID,
-                    R.string.playback,
-                    0,
-                    NOTIFICATION_ID,
-                    MediaDescriptionAdapter(),
-                    NotificationListener()
-            )
+                applicationContext,
+                NOTIFICATION_CHANNEL_ID,
+                R.string.playback,
+                0,
+                NOTIFICATION_ID,
+                object :  PlayerNotificationManager.MediaDescriptionAdapter {
 
-            playerNotificationManager?.setControlDispatcher(DefaultControlDispatcher(0,0))
-            playerNotificationManager?.setPlayer(player)
+                    override fun createCurrentContentIntent(player: Player): PendingIntent? = PendingIntent.getActivity(
+                            applicationContext,
+                            0,
+                            Intent(applicationContext, MainActivity::class.java),
+                            PendingIntent.FLAG_UPDATE_CURRENT)
+
+                    override fun getCurrentContentText(player: Player): String? {
+                        return "${sensorTempo.value} - ${steps.value}"
+                    }
+
+                    override fun getCurrentContentTitle(player: Player): String {
+                        return "${currentMusic.value?.artist} - ${currentMusic.value?.title}"
+                    }
+
+                    override fun getCurrentLargeIcon(player: Player, callback: PlayerNotificationManager.BitmapCallback): Bitmap? {
+                        return null
+                    }
+                },
+                object : PlayerNotificationManager.NotificationListener {
+
+                    override fun onNotificationPosted(notificationId: Int,
+                                                      notification: Notification,
+                                                      ongoing: Boolean) {
+                        super.onNotificationPosted(notificationId, notification, ongoing)
+                        if (!ongoing) {
+                            stopForeground(false)
+                        } else {
+                            startForeground(notificationId, notification)
+                        }
+
+                    }
+
+                    override fun onNotificationCancelled(notificationId: Int,
+                                                         dismissedByUser: Boolean) {
+                        super.onNotificationCancelled(notificationId, dismissedByUser)
+                        stopSelf()
+                    }
+                }
+            ).apply {
+                setControlDispatcher(DefaultControlDispatcher(0,0))
+                setPlayer(player)
+            }
         }
     }
 
@@ -251,46 +290,5 @@ class MusicService : Service(), SensorEventListener {
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-    }
-
-    inner class MediaDescriptionAdapter : PlayerNotificationManager.MediaDescriptionAdapter {
-
-        override fun createCurrentContentIntent(player: Player): PendingIntent? {
-            // return pending intent
-            return null
-        }
-
-        override fun getCurrentContentText(player: Player): String? {
-            return "${sensorTempo.value} - ${steps.value}"
-        }
-
-        override fun getCurrentContentTitle(player: Player): String {
-            return "${currentMusic.value?.artist} - ${currentMusic.value?.title}"
-        }
-
-        override fun getCurrentLargeIcon(player: Player, callback: PlayerNotificationManager.BitmapCallback): Bitmap? {
-            return null
-        }
-    }
-
-    inner class NotificationListener : PlayerNotificationManager.NotificationListener {
-
-        override fun onNotificationPosted(notificationId: Int,
-                                          notification: Notification,
-                                          ongoing: Boolean) {
-            super.onNotificationPosted(notificationId, notification, ongoing)
-            if (!ongoing) {
-                stopForeground(false)
-            } else {
-                startForeground(notificationId, notification)
-            }
-
-        }
-
-        override fun onNotificationCancelled(notificationId: Int,
-                                             dismissedByUser: Boolean) {
-            super.onNotificationCancelled(notificationId, dismissedByUser)
-            stopSelf()
-        }
     }
 }
