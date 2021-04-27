@@ -28,6 +28,7 @@ class PlaylistDetailFragment : Fragment() {
     private lateinit var viewModel: PlaylistDetailVM
 
     private lateinit var etName: EditText
+    private lateinit var btnDelete: Button
 
     override fun onCreateView(
             inflater: LayoutInflater, container: ViewGroup?,
@@ -59,7 +60,6 @@ class PlaylistDetailFragment : Fragment() {
         })
 
         viewModel.getAllSongForPlaylist(args.playlist.playlistId)
-        //viewModel.insertCrossEntity()
 
         return view
     }
@@ -78,6 +78,11 @@ class PlaylistDetailFragment : Fragment() {
             viewModel.savePlaylist()
         }
 
+        view.findViewById<Button>(R.id.btnPlaylistDelete).setOnClickListener {
+            viewModel.removePlaylist()
+            findNavController().navigate(R.id.action_PlaylistDetailFragment_to_PlaylistListFragment)
+        }
+
         view.findViewById<Button>(R.id.btnToAddSong).setOnClickListener {
            findNavController().navigate(PlaylistDetailFragmentDirections.actionPlaylistDetailFragmentToAddSongToPlaylistFragment(viewModel.playlist.value!!))
         }
@@ -92,6 +97,6 @@ class PlaylistDetailFragment : Fragment() {
     }
 
     private fun onButtonClick(music: Music) {
-        viewModel.removePlaylist(music.musicId)
+        viewModel.removeSong(music.musicId)
     }
 }

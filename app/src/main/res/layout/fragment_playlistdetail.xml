@@ -26,15 +26,15 @@
         android:text="Save"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.95"
+        app:layout_constraintHorizontal_bias="0.631"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.023" />
+        app:layout_constraintVertical_bias="0.103" />
 
     <EditText
         android:id="@+id/etPlaylistName"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="175dp"
+        android:layout_height="43dp"
         android:layout_marginTop="12dp"
         android:ems="10"
         android:inputType="text"
@@ -45,20 +45,30 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/songs_recycler_view"
         android:layout_width="match_parent"
-        android:layout_height="555dp"
+        android:layout_height="0dp"
         android:layout_marginTop="16dp"
+        app:layoutManager="LinearLayoutManager"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/etPlaylistName"
-        tools:listitem="@layout/music_item"
-        app:layoutManager="LinearLayoutManager"/>
+        tools:listitem="@layout/music_item" />
 
     <Button
         android:id="@+id/btnToAddSong"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="3dp"
         android:text="Add Song"
-        app:layout_constraintStart_toStartOf="@+id/btnSavePlaylist"
-        app:layout_constraintTop_toBottomOf="@+id/btnSavePlaylist" />
+        app:layout_constraintStart_toEndOf="@+id/btnSavePlaylist"
+        app:layout_constraintTop_toTopOf="@+id/btnSavePlaylist" />
+
+    <Button
+        android:id="@+id/btnPlaylistDelete"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="88dp"
+        android:layout_marginBottom="9dp"
+        android:text="Delete"
+        app:layout_constraintBottom_toTopOf="@+id/btnSavePlaylist"
+        app:layout_constraintStart_toStartOf="@+id/btnSavePlaylist" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

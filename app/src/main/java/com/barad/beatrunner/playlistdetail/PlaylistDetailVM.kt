@@ -43,7 +43,13 @@ class PlaylistDetailVM(
         }
     }
 
-    fun removePlaylist(musicId: Int) {
+    fun removePlaylist() {
+        GlobalScope.launch {
+            playlist.value?.let { playlistDao.deleteById(it.playlistId) }
+        }
+    }
+
+    fun removeSong(musicId: Int) {
         GlobalScope.launch {
             playlist.value?.playlistId?.let { playlistMusicDao.deleteById(it, musicId) }
             playlistWithSongs.postValue(playlist.value?.playlistId?.let {

@@ -18,7 +18,6 @@ class PlaylistListAdapter(private val onClick: (Playlist) -> Unit) :
     class PlaylistViewHolder(itemView: View, val onClick: (Playlist) -> Unit) :
             RecyclerView.ViewHolder(itemView) {
         private val playlistTextView: TextView = itemView.findViewById(R.id.playlistName)
-        private val playlistEditButton: Button = itemView.findViewById(R.id.playlistEdit)
         private var currentPlaylist: Playlist? = null
 
         init {

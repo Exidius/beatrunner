@@ -33,8 +33,9 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/playlist_recycler_view"
         android:layout_width="match_parent"
-        android:layout_height="600dp"
+        android:layout_height="0dp"
         app:layoutManager="LinearLayoutManager"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/button_second"
         tools:listitem="@layout/playlist_item" />

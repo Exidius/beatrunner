@@ -53,7 +53,9 @@ class MusicListAdapter(private val onClick: (Music) -> Unit, private val onButto
             titleTextView.text = music.title
             artistTextView.text = music.artist
             tempoTextView.text = music.tempo.toString()
-            multiButton.text = btnText
+            if (btnText.isNullOrBlank()) { multiButton.visibility = View.GONE }
+            else { multiButton.text = btnText }
+
         }
     }
 
