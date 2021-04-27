@@ -32,13 +32,34 @@ class AddSongToPlaylistVM(
     }
 
     fun insertCrossEntity(musicId: Int) {
+        var playlistSongs = emptyList<Music>()
+        var allSongs = emptyList<Music>()
+        var filteredResult = emptyList<Music>()
         GlobalScope.launch {
-            playlistMusicDao.insert(PlaylistMusicCrossRef(playlist.playlistId, musicId))
+            try {
+                playlistMusicDao.insert(PlaylistMusicCrossRef(playlist.playlistId, musicId))
+            } catch (e: Exception) {
+                Log.d("exception", e.toString())
+            }
+        }.invokeOnCompletion {
+            playlistSongs = playlistMusicDao.getPlaylistByIdWithMusics(playlist.playlistId).songs
+            allSongs =  musicDao.getAll()
+            filteredResult = allSongs.filter { x -> !playlistSongs.contains(x) }
+            musicList.postValue(filteredResult)
         }
     }
 
     fun getAllSong() {
-        GlobalScope.launch { musicList.postValue(musicDao.getAll())}
+        var playlistSongs = emptyList<Music>()
+        var allSongs = emptyList<Music>()
+        var filteredResult = emptyList<Music>()
+        GlobalScope.launch {
+            playlistSongs = playlistMusicDao.getPlaylistByIdWithMusics(playlist.playlistId).songs
+            allSongs =  musicDao.getAll()
+            filteredResult = allSongs.filter { x -> !playlistSongs.contains(x) }
+            musicList.postValue(filteredResult)
+
+        }
     }
 }
 

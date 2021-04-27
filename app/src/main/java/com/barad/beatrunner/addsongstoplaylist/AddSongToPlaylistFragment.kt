@@ -91,5 +91,6 @@ class AddSongToPlaylistFragment : Fragment() {
 
     private fun onButtonClick(music: Music) {
         viewModel.insertCrossEntity(music.musicId)
+        viewModel.getAllSong()
     }
 }
