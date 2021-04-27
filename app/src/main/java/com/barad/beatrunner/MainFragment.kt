@@ -8,7 +8,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
-import android.hardware.SensorManager
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
@@ -19,18 +18,10 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
-import com.barad.beatrunner.data.AppDatabase
-import com.barad.beatrunner.data.MusicStore
-import com.barad.beatrunner.models.Music
-import com.barad.beatrunner.service.MusicEventListener
 import com.barad.beatrunner.service.MusicService
-import com.barad.beatrunner.service.SensorService
-import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.ui.PlayerControlView
 
 class MainFragment : Fragment() {
@@ -52,6 +43,7 @@ class MainFragment : Fragment() {
 
     val connection = object : ServiceConnection {
         override fun onServiceDisconnected(name: ComponentName?) {
+            musicService = null
         }
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             if (service is MusicService.MusicServiceBinder) {
@@ -118,8 +110,10 @@ class MainFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        viewModel.getAllMusicFromDevice()
+
         view.findViewById<Button>(R.id.button_first).setOnClickListener {
-            findNavController().navigate(R.id.action_FirstFragment_to_SecondFragment)
+            findNavController().navigate(R.id.action_MainFragment_to_PlaylistListFragment)
         }
     }
 

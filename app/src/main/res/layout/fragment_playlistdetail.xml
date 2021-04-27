@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".playlistdetail.PlaylistDetailFragment">
+
+
+    <Button
+        android:id="@+id/btnBack"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Back"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.049"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.023" />
+
+    <Button
+        android:id="@+id/btnSavePlaylist"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Save"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.95"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.023" />
+
+    <EditText
+        android:id="@+id/etPlaylistName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:ems="10"
+        android:inputType="text"
+        android:text="PlaylistName"
+        app:layout_constraintStart_toStartOf="@+id/btnBack"
+        app:layout_constraintTop_toBottomOf="@+id/btnBack" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/songs_recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="555dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/etPlaylistName"
+        tools:listitem="@layout/music_item"
+        app:layoutManager="LinearLayoutManager"/>
+
+    <Button
+        android:id="@+id/btnToAddSong"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
+        android:text="Add Song"
+        app:layout_constraintStart_toStartOf="@+id/btnSavePlaylist"
+        app:layout_constraintTop_toBottomOf="@+id/btnSavePlaylist" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

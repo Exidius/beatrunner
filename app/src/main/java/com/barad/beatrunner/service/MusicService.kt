@@ -100,7 +100,7 @@ class MusicService : Service(), SensorEventListener {
     private fun fetchMusicList() {
         GlobalScope.launch() {
             try {
-                musicList = musicDao.getAll()
+                if(musicList.isEmpty()) { musicList = musicDao.getAll() }
             } catch (e: Exception) {
                 Log.d("barad-serv", e.toString())
             }

@@ -3,26 +3,60 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/FirstFragment">
+    app:startDestination="@id/MainFragment">
 
     <fragment
-        android:id="@+id/FirstFragment"
+        android:id="@+id/MainFragment"
         android:name="com.barad.beatrunner.MainFragment"
-        android:label="@string/first_fragment_label"
+        android:label="MainFragment"
         tools:layout="@layout/fragment_main">
 
         <action
-            android:id="@+id/action_FirstFragment_to_SecondFragment"
-            app:destination="@id/SecondFragment" />
+            android:id="@+id/action_MainFragment_to_PlaylistListFragment"
+            app:destination="@id/PlaylistListFragment" />
     </fragment>
     <fragment
-        android:id="@+id/SecondFragment"
-        android:name="com.barad.beatrunner.SecondFragment"
-        android:label="@string/second_fragment_label"
-        tools:layout="@layout/fragment_second">
+        android:id="@+id/PlaylistListFragment"
+        android:name="com.barad.beatrunner.playlistlist.PlaylistListFragment"
+        android:label="PlaylistListFragment"
+        tools:layout="@layout/fragment_playlistlist">
 
         <action
-            android:id="@+id/action_SecondFragment_to_FirstFragment"
-            app:destination="@id/FirstFragment" />
+            android:id="@+id/action_PlaylistListFragment_to_MainFragment"
+            app:destination="@id/MainFragment" />
+        <action
+            android:id="@+id/action_PlaylistListFragment_to_PlaylistDetailFragment"
+            app:destination="@id/PlaylistDetailFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/PlaylistDetailFragment"
+        android:name="com.barad.beatrunner.playlistdetail.PlaylistDetailFragment"
+        android:label="PlaylistDetailFragment"
+        tools:layout="@layout/fragment_playlistdetail">
+
+        <argument
+            android:name="playlist"
+            app:argType="com.barad.beatrunner.models.Playlist"/>
+
+        <action
+            android:id="@+id/action_PlaylistDetailFragment_to_PlaylistListFragment"
+            app:destination="@id/PlaylistListFragment" />
+        <action
+            android:id="@+id/action_PlaylistDetailFragment_to_addSongToPlaylistFragment"
+            app:destination="@id/addSongToPlaylistFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/addSongToPlaylistFragment"
+        android:name="com.barad.beatrunner.addsongstoplaylist.AddSongToPlaylistFragment"
+        android:label="fragment_addsong"
+        tools:layout="@layout/fragment_addsong" >
+
+        <argument
+            android:name="playlist"
+            app:argType="com.barad.beatrunner.models.Playlist"/>
+
+        <action
+            android:id="@+id/action_addSongToPlaylistFragment_to_PlaylistDetailFragment"
+            app:destination="@id/PlaylistDetailFragment" />
     </fragment>
 </navigation>

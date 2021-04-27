@@ -23,10 +23,6 @@
             android:name=".service.MusicService"
             android:stopWithTask="true">
         </service>
-        <service
-            android:name=".service.SensorService"
-            android:stopWithTask="true">
-        </service>
     </application>
 
 </manifest>

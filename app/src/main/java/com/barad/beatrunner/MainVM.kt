@@ -1,24 +1,14 @@
 package com.barad.beatrunner
 
 import android.app.Application
-import android.content.ComponentName
-import android.content.Context
-import android.content.ServiceConnection
-import android.hardware.SensorManager
-import android.os.IBinder
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import com.barad.beatrunner.data.AppDatabase
-import com.barad.beatrunner.data.MusicDao
 import com.barad.beatrunner.data.MusicStore
 import com.barad.beatrunner.models.Music
-import com.barad.beatrunner.service.MusicEventListener
 import com.barad.beatrunner.service.MusicService
-import com.barad.beatrunner.service.SensorService
-import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.ui.PlayerControlView
-import com.google.android.exoplayer2.ui.PlayerView
 
 class MainVM(
         application: Application,
@@ -57,4 +47,16 @@ class MainVM(
     }
 
 
+}
+
+class MainVMFactory(
+        private val application: Application,
+        private val playerView: PlayerControlView
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel?> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(MainVM::class.java)) {
+            return MainVM(application, playerView) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
 }

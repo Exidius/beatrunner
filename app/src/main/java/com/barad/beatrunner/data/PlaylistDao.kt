@@ -1,9 +1,6 @@
 package com.barad.beatrunner.data
 
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.Query
-import androidx.room.Transaction
+import androidx.room.*
 import com.barad.beatrunner.models.Music
 import com.barad.beatrunner.models.Playlist
 import com.barad.beatrunner.models.PlaylistWithMusics
@@ -19,6 +16,9 @@ interface PlaylistDao {
     @Query("DELETE FROM playlist WHERE playlistId LIKE :id")
     fun deleteById(id: Int)
 
+    @Update
+    fun updateSong(playlist: Playlist);
+
     @Insert
     suspend fun insertAll(vararg playlist: Playlist)
 
@@ -28,4 +28,8 @@ interface PlaylistDao {
     @Transaction
     @Query("SELECT * FROM playlist")
     fun getPlaylistsWithMusics(): List<PlaylistWithMusics>
+
+    @Transaction
+    @Query("SELECT * FROM playlist WHERE playlistId LIKE :id")
+    fun getPlaylistByIdWithMusics(id: Int): PlaylistWithMusics
 }

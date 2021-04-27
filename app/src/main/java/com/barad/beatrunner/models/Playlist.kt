@@ -1,15 +1,17 @@
 package com.barad.beatrunner.models
 
+import android.os.Parcelable
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import kotlinx.android.parcel.Parcelize
 
 @Entity(tableName = "playlist")
+@Parcelize
 data class Playlist (
     @PrimaryKey(autoGenerate = true)
+    var playlistId: Int = 0,
 
-    var playlistId: Int,
+    var name: String = "Playlist",
 
-    var name: String,
-
-)
+) : Parcelable

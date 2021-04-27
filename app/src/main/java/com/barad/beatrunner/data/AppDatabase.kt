@@ -8,10 +8,11 @@ import com.barad.beatrunner.models.Music
 import com.barad.beatrunner.models.Playlist
 import com.barad.beatrunner.models.PlaylistMusicCrossRef
 
-@Database(entities = [Music::class, Playlist::class, PlaylistMusicCrossRef::class], version = 2)
+@Database(entities = [Music::class, Playlist::class, PlaylistMusicCrossRef::class], version = 4)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun musicDao() : MusicDao
     abstract fun playlistDao() : PlaylistDao
+    abstract fun playlistMusicDao() : PlaylistMusicCrossDao
 
     companion object {
 
