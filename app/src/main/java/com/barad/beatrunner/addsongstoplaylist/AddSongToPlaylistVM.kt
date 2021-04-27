@@ -32,9 +32,6 @@ class AddSongToPlaylistVM(
     }
 
     fun insertCrossEntity(musicId: Int) {
-        var playlistSongs = emptyList<Music>()
-        var allSongs = emptyList<Music>()
-        var filteredResult = emptyList<Music>()
         GlobalScope.launch {
             try {
                 playlistMusicDao.insert(PlaylistMusicCrossRef(playlist.playlistId, musicId))
@@ -42,23 +39,19 @@ class AddSongToPlaylistVM(
                 Log.d("exception", e.toString())
             }
         }.invokeOnCompletion {
-            playlistSongs = playlistMusicDao.getPlaylistByIdWithMusics(playlist.playlistId).songs
-            allSongs =  musicDao.getAll()
-            filteredResult = allSongs.filter { x -> !playlistSongs.contains(x) }
+            val playlistSongs = playlistMusicDao.getPlaylistByIdWithMusics(playlist.playlistId).songs
+            val allSongs =  musicDao.getAll()
+            val filteredResult = allSongs.filter { x -> !playlistSongs.contains(x) }
             musicList.postValue(filteredResult)
         }
     }
 
     fun getAllSong() {
-        var playlistSongs = emptyList<Music>()
-        var allSongs = emptyList<Music>()
-        var filteredResult = emptyList<Music>()
         GlobalScope.launch {
-            playlistSongs = playlistMusicDao.getPlaylistByIdWithMusics(playlist.playlistId).songs
-            allSongs =  musicDao.getAll()
-            filteredResult = allSongs.filter { x -> !playlistSongs.contains(x) }
+            val playlistSongs = playlistMusicDao.getPlaylistByIdWithMusics(playlist.playlistId).songs
+            val allSongs =  musicDao.getAll()
+            val filteredResult = allSongs.filter { x -> !playlistSongs.contains(x) }
             musicList.postValue(filteredResult)
-
         }
     }
 }
