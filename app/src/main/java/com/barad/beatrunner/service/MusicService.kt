@@ -2,7 +2,6 @@ package com.barad.beatrunner.service
 
 import android.app.Notification
 import android.app.PendingIntent
-import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -12,7 +11,6 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.*
 import android.util.Log
-import android.widget.RemoteViews
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.MutableLiveData
 import com.barad.beatrunner.MainActivity
@@ -22,17 +20,16 @@ import com.barad.beatrunner.data.MusicDao
 import com.barad.beatrunner.models.Music
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.ui.PlayerNotificationManager
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import java.time.Instant
 import java.util.*
 import kotlin.math.abs
 import kotlin.math.sqrt
 
+
 class MusicService : LifecycleService(), SensorEventListener {
 
-    var MAX_TEMPO_DEFFIRENCE = 15
+    var MAX_TEMPO_DIFFERENCE = 15
+    var SIGNIFICANT_TEMPO_DIFFERENCE = 5
 
     private val _sensorTempo = MutableLiveData<Float>()
     val sensorTempo
@@ -58,6 +55,8 @@ class MusicService : LifecycleService(), SensorEventListener {
     private val timeQueue: Queue<Instant> = LinkedList()
     private var latest = Instant.now()
 
+    private var lastSongTempo = 0f
+
     private lateinit var player: SimpleExoPlayer
     private lateinit var musicDao: MusicDao
     private lateinit var musicEventListener: MusicEventListener
@@ -66,7 +65,22 @@ class MusicService : LifecycleService(), SensorEventListener {
     private val NOTIFICATION_ID = 2
     private var playerNotificationManager: PlayerNotificationManager? = null
 
-    private val placeHolderMusic = Music(Int.MAX_VALUE,"Title","Artist","Album","URI","PATH",0f)
+    private val placeHolderMusic = Music(
+        Int.MAX_VALUE,
+        "Title",
+        "Artist",
+        "Album",
+        "URI",
+        "PATH",
+        0f
+    )
+
+    private var startOfDifference = Instant.MAX
+    private var tempoChangeRegistered = false
+    private var isDifferenceMax = false
+    private var isDifferenceSignificant = false
+    private var foundMatchingSongs = false
+    private var currentPlaybackTempo = 0.0f
 
     init{
         currentPlaylist.value = listOf(placeHolderMusic)
@@ -75,7 +89,7 @@ class MusicService : LifecycleService(), SensorEventListener {
         steps.value = 0
 
         currentPlaylist.observe(this, {
-            onTempoChange(sensorTempo.value!!)
+            switchSong()
         })
     }
 
@@ -94,19 +108,19 @@ class MusicService : LifecycleService(), SensorEventListener {
     }
 
     fun play() {
-        player.prepare()
-        if (currentMusic.value?.startTime != 0L) {
-            currentMusic.value?.let { player.seekTo(it.startTime) }
+        if(_sensorTempo.value != 0f) {
+            player.prepare()
+            if (currentMusic.value?.startTime != 0L) {
+                currentMusic.value?.let { player.seekTo(it.startTime) }
+            }
+            lastSongTempo = currentMusic.value?.tempo!!
+            player.playWhenReady = true
         }
-        // TODO: Add end at duration
-        player.playWhenReady = true
     }
 
     fun playNextInPlaylist() {
-        if (!currentPlaylistIsNullOrDefault()) {
-            player.next()
-            play()
-        }
+        player.next()
+        play()
     }
 
     fun changePlaylist(songs: List<Music>) {
@@ -125,33 +139,65 @@ class MusicService : LifecycleService(), SensorEventListener {
     fun onTempoChangeFromUi(tempo: Float) {
         timeQueue.clear()
         sensorTempo.value = tempo
-        onTempoChange(tempo)
     }
 
-    private fun onTempoChange(tempo: Float) {
-        if (!currentPlaylistIsNullOrDefault()) {
-            val songsMatchTempo = mutableListOf<Music>()
-            currentPlaylist.value?.forEach {
-                if (abs(it.tempo - tempo) < MAX_TEMPO_DEFFIRENCE) {
-                    songsMatchTempo.add(it)
+    private fun checkTempoDifference() {
+        when {
+            abs(currentMusic.value?.tempo!! - sensorTempo.value!!) > MAX_TEMPO_DIFFERENCE -> {
+                isDifferenceMax = true
+                isDifferenceSignificant = true
+                if (!tempoChangeRegistered) {
+                    startOfDifference = Instant.now()
+                    tempoChangeRegistered = true
                 }
             }
-            if (songsMatchTempo.isEmpty()) {
-                currentPlaylist.value?.let { setPlayback(it, tempo, false) }
-            } else {
-                setPlayback(songsMatchTempo, tempo)
+            abs(currentPlaybackTempo - sensorTempo.value!!) > SIGNIFICANT_TEMPO_DIFFERENCE -> {
+                isDifferenceMax = false
+                isDifferenceSignificant = true
+                if (!tempoChangeRegistered) {
+                    startOfDifference = Instant.now()
+                    tempoChangeRegistered = true
+                }
+            }
+            else -> {
+                isDifferenceMax = false
+                isDifferenceSignificant = false
+                startOfDifference = Instant.now()
+                tempoChangeRegistered = false
             }
         }
     }
 
-    private fun setPlayback(musicList: List<Music>, tempo: Float, allowTempoChange: Boolean = true) {
+    private fun switchSong() {
+        val songsMatchTempo = mutableListOf<Music>()
+        currentPlaylist.value?.forEach {
+            if (abs(it.tempo - sensorTempo.value!!) < MAX_TEMPO_DIFFERENCE) {
+                songsMatchTempo.add(it)
+            }
+        }
+        if (songsMatchTempo.isEmpty()) {
+            currentPlaylist.value?.let { setPlayback(it,false) }
+        } else {
+            setPlayback(songsMatchTempo)
+        }
+    }
+
+    private fun setPlayback(musicList: List<Music>, allowSpeedChange: Boolean = true) {
         setPlayerPlaylist(musicList)
 
-        if(allowTempoChange) {
-            val speed: Float = tempo / (currentMusic.value?.tempo!!) //TODO: multiples of 2
-            Log.d("barad-tempo", speed.toString())
-            player.setPlaybackParameters(PlaybackParameters(speed))
+        if(allowSpeedChange) {
+            changePlaybackSpeed()
         }
+    }
+
+    private fun changePlaybackSpeed() {
+        var speed = 1f
+        if (currentMusic.value?.tempo!! != 0.0f) {
+            speed = sensorTempo.value!! / (currentMusic.value?.tempo!!) //TODO: multiples of 2
+        }
+        Log.d("barad-speedMultiplier", speed.toString())
+        player.setPlaybackParameters(PlaybackParameters(speed))
+        currentPlaybackTempo = speed * currentMusic.value?.tempo!!
     }
 
     private fun setPlayerPlaylist(musicList: List<Music>) {
@@ -168,13 +214,15 @@ class MusicService : LifecycleService(), SensorEventListener {
                 R.string.playback,
                 0,
                 NOTIFICATION_ID,
-                object :  PlayerNotificationManager.MediaDescriptionAdapter {
+                object : PlayerNotificationManager.MediaDescriptionAdapter {
 
-                    override fun createCurrentContentIntent(player: Player): PendingIntent? = PendingIntent.getActivity(
+                    override fun createCurrentContentIntent(player: Player): PendingIntent? =
+                        PendingIntent.getActivity(
                             applicationContext,
                             0,
                             Intent(applicationContext, MainActivity::class.java),
-                            PendingIntent.FLAG_UPDATE_CURRENT)
+                            PendingIntent.FLAG_UPDATE_CURRENT
+                        )
 
                     override fun getCurrentContentText(player: Player): String? {
                         return "${sensorTempo.value} - ${steps.value}"
@@ -184,15 +232,20 @@ class MusicService : LifecycleService(), SensorEventListener {
                         return "${currentMusic.value?.artist} - ${currentMusic.value?.title}"
                     }
 
-                    override fun getCurrentLargeIcon(player: Player, callback: PlayerNotificationManager.BitmapCallback): Bitmap? {
+                    override fun getCurrentLargeIcon(
+                        player: Player,
+                        callback: PlayerNotificationManager.BitmapCallback
+                    ): Bitmap? {
                         return null
                     }
                 },
                 object : PlayerNotificationManager.NotificationListener {
 
-                    override fun onNotificationPosted(notificationId: Int,
-                                                      notification: Notification,
-                                                      ongoing: Boolean) {
+                    override fun onNotificationPosted(
+                        notificationId: Int,
+                        notification: Notification,
+                        ongoing: Boolean
+                    ) {
                         super.onNotificationPosted(notificationId, notification, ongoing)
                         if (!ongoing) {
                             stopForeground(false)
@@ -202,14 +255,16 @@ class MusicService : LifecycleService(), SensorEventListener {
 
                     }
 
-                    override fun onNotificationCancelled(notificationId: Int,
-                                                         dismissedByUser: Boolean) {
+                    override fun onNotificationCancelled(
+                        notificationId: Int,
+                        dismissedByUser: Boolean
+                    ) {
                         super.onNotificationCancelled(notificationId, dismissedByUser)
                         stopSelf()
                     }
                 }
             ).apply {
-                setControlDispatcher(DefaultControlDispatcher(0,0))
+                setControlDispatcher(DefaultControlDispatcher(0, 0))
                 setPlayer(player)
             }
         }
@@ -235,40 +290,63 @@ class MusicService : LifecycleService(), SensorEventListener {
         sensorAcc = sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         sensorLinAcc = sensorManager!!.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
 
-        sensorManager!!.registerListener(this,sensorGyro,SensorManager.SENSOR_DELAY_FASTEST)
-        sensorManager!!.registerListener(this,sensorAcc,SensorManager.SENSOR_DELAY_NORMAL)
-        sensorManager!!.registerListener(this,sensorLinAcc,SensorManager.SENSOR_DELAY_FASTEST)
+        sensorManager!!.registerListener(this, sensorGyro, SensorManager.SENSOR_DELAY_GAME)
+        sensorManager!!.registerListener(this, sensorAcc, SensorManager.SENSOR_DELAY_GAME)
+        sensorManager!!.registerListener(this, sensorLinAcc, SensorManager.SENSOR_DELAY_GAME)
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
         if (event != null) {
+
+            checkTempoDifference()
+
+            if(startOfDifference != Instant.MAX && sensorTempo.value != 0f) {
+                if (isDifferenceSignificant && isDifferenceMax &&
+                    Instant.now().toEpochMilli() - startOfDifference.toEpochMilli() > 3000) {
+
+                    switchSong()
+
+                } else if (isDifferenceSignificant &&
+                    Instant.now().toEpochMilli() - startOfDifference.toEpochMilli() > 3000) {
+
+                    changePlaybackSpeed()
+
+                }
+
+                var diff2 = Instant.now().toEpochMilli() - startOfDifference.toEpochMilli()
+                Log.d("barad-asd", "${isDifferenceSignificant} ${diff2} ${sensorTempo.value} ${currentPlaybackTempo} ${currentMusic.value?.tempo}")
+            }
+
             when (event.sensor.type) {
                 Sensor.TYPE_ACCELEROMETER -> {
                     val x: Float = event.values[0]
                     val y: Float = event.values[1]
                     val z: Float = event.values[2]
 
-                    sensorQueue.add(sqrt(x*x+y*y+z*z))
-                    if (sensorQueue.average() > 17) {
+                    sensorQueue.add(sqrt(x * x + y * y + z * z))
+                    if (sensorQueue.average() > 25) {
                         val diff = Instant.now().toEpochMilli() - latest.toEpochMilli()
                         if (diff > 150) {
                             latest = Instant.now()
                             timeQueue.add(Instant.now())
                             steps.value = steps.value?.plus(1)
-                            sensorTempo.value?.let { onTempoChange(it) }
                         }
                     }
 
-                    if (sensorQueue.size > 10) { sensorQueue.remove() }
-                    if (timeQueue.size > 10) { timeQueue.remove() }
+                    if (sensorQueue.size > 10) {
+                        sensorQueue.remove()
+                    }
+                    if (timeQueue.size > 10) {
+                        timeQueue.remove()
+                    }
 
                     if (timeQueue.size > 2) {
-                        val timeInstantList:List<Instant> = timeQueue.map { x -> x }
+                        val timeInstantList: List<Instant> = timeQueue.map { x -> x }
                         var sum: Long = 0
-                        for(i in 1 until timeInstantList.size) {
-                            sum += timeInstantList[i].toEpochMilli()-timeInstantList[i-1].toEpochMilli()
+                        for (i in 1 until timeInstantList.size) {
+                            sum += timeInstantList[i].toEpochMilli() - timeInstantList[i - 1].toEpochMilli()
                         }
-                        sensorTempo.value = (60f/(sum/(timeInstantList.size-1))*1000f)
+                        sensorTempo.value = (60f / (sum / (timeInstantList.size - 1)) * 1000f)
                     }
                 }
                 else -> {

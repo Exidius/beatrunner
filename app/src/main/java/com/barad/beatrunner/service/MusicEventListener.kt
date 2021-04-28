@@ -17,7 +17,7 @@ class MusicEventListener(private val musicService: MusicService,
                          private val musicDao: MusicDao) : Player.EventListener {
 
     override fun onMediaItemTransition(@Nullable mediaItem: MediaItem?, @MediaItemTransitionReason reason: Int) {
-        if (mediaItem != null) {
+        if (mediaItem != null && mediaItem.mediaId != "URI") {
             musicService.currentMusic.value = (musicService.currentPlaylist.value?.find {
                 (mediaItem.mediaId.split('/').last()) == it.musicId.toString()
             })
