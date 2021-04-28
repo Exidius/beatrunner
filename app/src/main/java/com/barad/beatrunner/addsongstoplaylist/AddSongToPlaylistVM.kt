@@ -5,10 +5,7 @@ import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.barad.beatrunner.data.AppDatabase
-import com.barad.beatrunner.data.MusicDao
-import com.barad.beatrunner.data.PlaylistDao
-import com.barad.beatrunner.data.PlaylistMusicCrossDao
+import com.barad.beatrunner.data.*
 import com.barad.beatrunner.models.Music
 import com.barad.beatrunner.models.Playlist
 import com.barad.beatrunner.models.PlaylistMusicCrossRef
@@ -18,6 +15,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
 class AddSongToPlaylistVM(
+    private val musicStore: MusicStore,
     private val playlist: Playlist,
     private val musicDao: MusicDao,
     private val playlistMusicDao: PlaylistMusicCrossDao
@@ -54,6 +52,10 @@ class AddSongToPlaylistVM(
             musicList.postValue(filteredResult)
         }
     }
+
+    fun getAllMusicFromDevice() {
+        musicStore.getAllMusicFromDevice(true)
+    }
 }
 
 class AddSongToPlaylistVMFactory(
@@ -63,6 +65,7 @@ class AddSongToPlaylistVMFactory(
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(AddSongToPlaylistVM::class.java)) {
             return AddSongToPlaylistVM(
+                MusicStore(context, AppDatabase.getInstance(context).musicDao()),
                 playlist,
                 AppDatabase.getInstance(context).musicDao(),
                 AppDatabase.getInstance(context).playlistMusicDao()) as T

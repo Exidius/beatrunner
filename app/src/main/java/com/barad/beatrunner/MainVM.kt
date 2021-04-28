@@ -30,7 +30,6 @@ class MainVM(
     val playlistDao = AppDatabase.getInstance(application).playlistDao()
     val playlistMusicDao = AppDatabase.getInstance(application).playlistMusicDao()
     val musicDao = AppDatabase.getInstance(application).musicDao()
-    val musicStore = MusicStore(application, musicDao)
 
     init{
         getAllPlaylist()
@@ -41,14 +40,6 @@ class MainVM(
         val asd = playlistDao.getAll()
             playlists.postValue(asd)
         }
-    }
-
-    fun getAllMusicFromDevice() {
-        musicStore.getAllMusicFromDevice(true)
-    }
-
-    fun changePlaylist() {
-
     }
 
     fun getAllSongForPlaylist(playlistId: Int) {

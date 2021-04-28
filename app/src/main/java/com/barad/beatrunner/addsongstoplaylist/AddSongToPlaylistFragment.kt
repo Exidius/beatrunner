@@ -17,6 +17,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.RecyclerView
 import com.barad.beatrunner.R
+import com.barad.beatrunner.data.MusicStore
 import com.barad.beatrunner.models.Music
 import com.barad.beatrunner.models.Playlist
 import com.barad.beatrunner.playlistdetail.MusicListAdapter
@@ -60,8 +61,6 @@ class AddSongToPlaylistFragment : Fragment() {
             }
         })
 
-        //viewModel.insertCrossEntity()
-
         etName.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
             }
@@ -73,11 +72,14 @@ class AddSongToPlaylistFragment : Fragment() {
                 musicAdapter.filter.filter(s)
             }
         })
+
         return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        viewModel.getAllMusicFromDevice()
 
         val args: AddSongToPlaylistFragmentArgs by navArgs()
         view.findViewById<Button>(R.id.btnAddSongBack).setOnClickListener {
