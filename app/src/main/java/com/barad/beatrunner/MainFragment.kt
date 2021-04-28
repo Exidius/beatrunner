@@ -114,6 +114,10 @@ class MainFragment : Fragment() {
                 }
             })
 
+            viewModel.playlistWithSongs.observe(viewLifecycleOwner,{
+                musicService?.changePlaylist(it.songs)
+            })
+
             requireActivity().startService(Intent(requireActivity(), MusicService::class.java))
             requireActivity().bindService(Intent(requireActivity(),
                     MusicService::class.java), connection, Context.BIND_AUTO_CREATE)
@@ -143,7 +147,6 @@ class MainFragment : Fragment() {
 
     private fun onButtonClick(playlist: Playlist) {
         viewModel.getAllSongForPlaylist(playlist.playlistId)
-        viewModel.playlistWithSongs.value?.let { musicService?.changePlaylist(it.songs) }
     }
 
     @SuppressLint("ObsoleteSdkInt")
