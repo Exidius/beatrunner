@@ -13,6 +13,7 @@ import android.hardware.SensorManager
 import android.os.*
 import android.util.Log
 import android.widget.RemoteViews
+import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.MutableLiveData
 import com.barad.beatrunner.MainActivity
 import com.barad.beatrunner.R
@@ -29,7 +30,9 @@ import java.util.*
 import kotlin.math.abs
 import kotlin.math.sqrt
 
-class MusicService : Service(), SensorEventListener {
+class MusicService : LifecycleService(), SensorEventListener {
+
+    var MAX_TEMPO_DEFFIRENCE = 15
 
     private val _sensorTempo = MutableLiveData<Float>()
     val sensorTempo
@@ -39,130 +42,122 @@ class MusicService : Service(), SensorEventListener {
     val steps
         get() = _steps
 
-    private var sensorManager: SensorManager? = null
+    private val _currentMusic = MutableLiveData<Music>()
+    val currentMusic
+        get() = _currentMusic
 
+    private val _currentPlaylist = MutableLiveData<List<Music>>()
+    val currentPlaylist
+        get() = _currentPlaylist
+
+    private var sensorManager: SensorManager? = null
     private var sensorGyro: Sensor? = null
     private var sensorAcc: Sensor? = null
     private var sensorLinAcc: Sensor? = null
-
-    val sensorQueue: Queue<Float> = LinkedList()
-    val timeQueue: Queue<Instant> = LinkedList()
-
+    private val sensorQueue: Queue<Float> = LinkedList()
+    private val timeQueue: Queue<Instant> = LinkedList()
     private var latest = Instant.now()
 
     private lateinit var player: SimpleExoPlayer
     private lateinit var musicDao: MusicDao
     private lateinit var musicEventListener: MusicEventListener
 
-    var mediaItem: MediaItem? = null
-    var musicList = listOf<Music>()
-    var lastTempo = 0f
-
     private val NOTIFICATION_CHANNEL_ID = "playback_channel"
     private val NOTIFICATION_ID = 2
     private var playerNotificationManager: PlayerNotificationManager? = null
 
-    private val _currentMusic = MutableLiveData<Music>()
-    val currentMusic
-        get() = _currentMusic
+    private val placeHolderMusic = Music(Int.MAX_VALUE,"Title","Artist","Album","URI","PATH",0f)
 
     init{
-        currentMusic.value = Music(Int.MAX_VALUE,"Title","Artist","Album","URI","PATH",0f)
+        currentPlaylist.value = listOf(placeHolderMusic)
+        currentMusic.value = placeHolderMusic
         sensorTempo.value = 0f
         steps.value = 0
-    }
 
-    fun onTempoChangeFromUi(tempo: Float) {
-        onTempoChange(tempo)
-        timeQueue.clear()
-        sensorTempo.value = tempo
-    }
-
-    private fun onTempoChange(tempo: Float) {
-        if(abs(_currentMusic.value!!.tempo - tempo) > 20) {
-            while (musicList.isEmpty()) {
-                fetchMusicList()
-            }
-            //selectNewMusic(tempo)
-            //switchMusic()
-            lastTempo = tempo
-            switchMusic(selectNewMusicList(tempo))
-        }
-        var speed: Float = tempo / currentMusic.value!!.tempo //TODO: multiples of 2
-        Log.d("barad-tempo", speed.toString())
-        player.setPlaybackParameters(PlaybackParameters(speed))
-    }
-
-    fun onSongChange() {
-        switchMusic(selectNewMusicList(lastTempo))
-    }
-
-    private fun fetchMusicList() {
-        GlobalScope.launch() {
-            try {
-                if(musicList.isEmpty()) { musicList = musicDao.getAll() }
-            } catch (e: Exception) {
-                Log.d("barad-serv", e.toString())
-            }
-        }
-    }
-
-    private fun selectNewMusic(tempo: Float) {
-        var closestTempo = 0f
-        musicList.forEach {
-            if (abs(it.tempo - tempo) < abs(closestTempo - tempo) ||
-                abs(it.tempo - tempo)*2 < abs(closestTempo - tempo) ||
-                abs(it.tempo - tempo)/2 < abs(closestTempo - tempo)) {
-                closestTempo = it.tempo
-                mediaItem = MediaItem.fromUri(it.uri)
-                currentMusic.value = it
-            }
-        }
-    }
-
-    private fun selectNewMusicList(tempo: Float) : List<MediaItem> {
-        val candidates = mutableListOf<Music>()
-
-        for (i in musicList.indices) {
-            if (abs(musicList[i].tempo - tempo) < 20) {
-                candidates.add(musicList[i])
-                if (candidates.size >= 20) {
-                    break
-                }
-            }
-        }
-
-        val toReturn = mutableListOf<MediaItem>()
-        candidates.forEach { toReturn.add(MediaItem.fromUri(it.uri)) }
-        return toReturn.shuffled()
-    }
-
-    private fun switchMusic() {
-        if (player.currentMediaItem != mediaItem) {
-            var oldVolume = player.volume
-
-            mediaItem?.let { player.setMediaItem(it) }
-
-            player.prepare()
-            player.seekTo(15000)
-            player.play()
-        }
-    }
-
-    private fun switchMusic(musicList: List<MediaItem>) {
-        player.setMediaItems(musicList)
+        currentPlaylist.observe(this, {
+            onTempoChange(sensorTempo.value!!)
+        })
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        super.onStartCommand(intent, flags, startId)
         return START_NOT_STICKY
     }
 
-    override fun onBind(intent: Intent?): IBinder? {
-        intent?.let {
+    override fun onBind(intent: Intent): IBinder? {
+        super.onBind(intent)
+        intent.let {
             displayNotification()
             registerManager()
         }
         return MusicServiceBinder()
+    }
+
+    fun play() {
+        player.prepare()
+        if (currentMusic.value?.startTime != 0L) {
+            currentMusic.value?.let { player.seekTo(it.startTime) }
+        }
+        // TODO: Add end at duration
+        player.playWhenReady = true
+    }
+
+    fun playNextInPlaylist() {
+        if (!currentPlaylistIsNullOrDefault()) {
+            player.next()
+            play()
+        }
+    }
+
+    fun changePlaylist(songs: List<Music>) {
+        currentPlaylist.value = songs
+    }
+
+    private fun currentPlaylistIsNullOrDefault(): Boolean {
+        return currentPlaylist.value == null ||
+                currentPlaylist.value?.contains(placeHolderMusic) == true
+    }
+
+    fun resetSteps() {
+        steps.value = 0
+    }
+
+    fun onTempoChangeFromUi(tempo: Float) {
+        timeQueue.clear()
+        sensorTempo.value = tempo
+        onTempoChange(tempo)
+    }
+
+    private fun onTempoChange(tempo: Float) {
+        if (!currentPlaylistIsNullOrDefault()) {
+            val songsMatchTempo = mutableListOf<Music>()
+            currentPlaylist.value?.forEach {
+                if (abs(it.tempo - tempo) < MAX_TEMPO_DEFFIRENCE) {
+                    songsMatchTempo.add(it)
+                }
+            }
+            if (songsMatchTempo.isEmpty()) {
+                currentPlaylist.value?.let { setPlayback(it, tempo, false) }
+            } else {
+                setPlayback(songsMatchTempo, tempo)
+            }
+        }
+    }
+
+    private fun setPlayback(musicList: List<Music>, tempo: Float, allowTempoChange: Boolean = true) {
+        setPlayerPlaylist(musicList)
+
+        if(allowTempoChange) {
+            val speed: Float = tempo / (currentMusic.value?.tempo!!) //TODO: multiples of 2
+            Log.d("barad-tempo", speed.toString())
+            player.setPlaybackParameters(PlaybackParameters(speed))
+        }
+    }
+
+    private fun setPlayerPlaylist(musicList: List<Music>) {
+        val mediaItems = mutableListOf<MediaItem>()
+        musicList.forEach { mediaItems.add(MediaItem.fromUri(it.uri)) }
+        player.setMediaItems(mediaItems.shuffled())
     }
 
     private fun displayNotification() {
@@ -224,7 +219,7 @@ class MusicService : Service(), SensorEventListener {
         super.onCreate()
         player = SimpleExoPlayer.Builder(application).build()
         musicDao = AppDatabase.getInstance(application).musicDao()
-        musicEventListener = MusicEventListener(player,this, musicDao)
+        musicEventListener = MusicEventListener(this, musicDao)
         player.addListener(musicEventListener)
     }
 

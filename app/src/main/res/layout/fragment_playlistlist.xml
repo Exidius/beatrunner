@@ -35,8 +35,8 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layoutManager="LinearLayoutManager"
+        tools:listitem="@layout/playlist_item"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/button_second"
-        tools:listitem="@layout/playlist_item" />
+        app:layout_constraintTop_toBottomOf="@+id/button_second" />
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -11,6 +11,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -21,6 +22,10 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.RecyclerView
+import com.barad.beatrunner.models.Playlist
+import com.barad.beatrunner.playlistlist.PlaylistListAdapter
+import com.barad.beatrunner.playlistlist.PlaylistListFragmentDirections
 import com.barad.beatrunner.service.MusicService
 import com.google.android.exoplayer2.ui.PlayerControlView
 
@@ -81,7 +86,7 @@ class MainFragment : Fragment() {
             playerView.setShowRewindButton(false)
             playerView.showTimeoutMs = 0
 
-            val mainVMFactory = MainVMFactory(application, playerView)
+            val mainVMFactory = MainVMFactory(application)
 
             viewModel = ViewModelProvider(this, mainVMFactory).get(MainVM::class.java)
 
@@ -93,6 +98,21 @@ class MainFragment : Fragment() {
             tvMusicTempo = view.findViewById(R.id.tv_music_tempo)
             inputTempo = view.findViewById(R.id.et_tempo)
 
+
+            val playlistAdapter = PlaylistListAdapter(
+                    { playlist -> adapterOnClick(playlist) },
+                    { playlist -> onButtonClick(playlist) },
+                    "Play"
+            )
+
+            val recyclerView: RecyclerView = view.findViewById(R.id.main_playlist_recycle_view)
+            recyclerView.adapter = playlistAdapter
+
+            viewModel.playlists.observe(viewLifecycleOwner, {
+                it?.let { list ->
+                    playlistAdapter.submitList(list as MutableList<Playlist>)
+                }
+            })
 
             requireActivity().startService(Intent(requireActivity(), MusicService::class.java))
             requireActivity().bindService(Intent(requireActivity(),
@@ -117,10 +137,14 @@ class MainFragment : Fragment() {
         }
     }
 
-//    override fun onDestroy() {
-//        super.onDestroy()
-//        sensorService.unregister()
-//    }
+    private fun adapterOnClick(playlist: Playlist) {
+        //findNavController().navigate(PlaylistListFragmentDirections.actionPlaylistListFragmentToPlaylistDetailFragment(playlist))
+    }
+
+    private fun onButtonClick(playlist: Playlist) {
+        viewModel.getAllSongForPlaylist(playlist.playlistId)
+        viewModel.playlistWithSongs.value?.let { musicService?.changePlaylist(it.songs) }
+    }
 
     @SuppressLint("ObsoleteSdkInt")
     fun isStoragePermissionGranted(): Boolean {

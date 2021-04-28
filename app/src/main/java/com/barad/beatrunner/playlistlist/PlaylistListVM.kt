@@ -18,7 +18,11 @@ class PlaylistListVM(private val playlistDao: PlaylistDao) : ViewModel() {
     val playlists
         get() = _playlists
 
-    fun getAllPlaylist() {
+    init{
+        getAllPlaylist()
+    }
+
+    private fun getAllPlaylist() {
         GlobalScope.launch { playlists.postValue(playlistDao.getAll())}
     }
 

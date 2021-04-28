@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.barad.beatrunner.MainVM
 import com.barad.beatrunner.MainVMFactory
 import com.barad.beatrunner.R
+import com.barad.beatrunner.models.Music
 import com.barad.beatrunner.models.Playlist
 
 class PlaylistListFragment : Fragment() {
@@ -31,12 +32,14 @@ class PlaylistListFragment : Fragment() {
         val viewModelFactory = PlaylistListVMFactory(requireActivity().application)
         viewModel = ViewModelProvider(this, viewModelFactory).get(PlaylistListVM::class.java)
 
-        val playlistAdapter = PlaylistListAdapter { playlist -> adapterOnClick(playlist) }
+        val playlistAdapter = PlaylistListAdapter(
+                { playlist -> adapterOnClick(playlist) },
+                { playlist -> onButtonClick(playlist) },
+                "Play"
+        )
 
         val recyclerView: RecyclerView = view.findViewById(R.id.playlist_recycler_view)
         recyclerView.adapter = playlistAdapter
-
-        viewModel.getAllPlaylist()
 
         viewModel.playlists.observe(viewLifecycleOwner, {
             it?.let { list ->
@@ -62,6 +65,10 @@ class PlaylistListFragment : Fragment() {
 
     private fun adapterOnClick(playlist: Playlist) {
         findNavController().navigate(PlaylistListFragmentDirections.actionPlaylistListFragmentToPlaylistDetailFragment(playlist))
+    }
+
+    private fun onButtonClick(playlist: Playlist) {
+        //viewModel.removeSong(music.musicId)
     }
 }
 

@@ -9,21 +9,28 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.barad.beatrunner.R
+import com.barad.beatrunner.models.Music
 import com.barad.beatrunner.models.Playlist
 
-class PlaylistListAdapter(private val onClick: (Playlist) -> Unit) :
+class PlaylistListAdapter(private val onClick: (Playlist) -> Unit, private val onButtonClick: (Playlist) -> Unit, private val btnText: String) :
         ListAdapter<Playlist, PlaylistListAdapter.PlaylistViewHolder>(PlaylistDiffCallback) {
 
     /* ViewHolder for Playlist, takes in the inflated view and the onClick behavior. */
-    class PlaylistViewHolder(itemView: View, val onClick: (Playlist) -> Unit) :
+    class PlaylistViewHolder(itemView: View, val onClick: (Playlist) -> Unit, val onButtonClick: (Playlist)-> Unit, val btnText: String) :
             RecyclerView.ViewHolder(itemView) {
         private val playlistTextView: TextView = itemView.findViewById(R.id.playlistName)
         private var currentPlaylist: Playlist? = null
+        private val multiButton: Button = itemView.findViewById(R.id.btnPlaylistMulti)
 
         init {
             itemView.setOnClickListener {
                 currentPlaylist?.let {
                     onClick(it)
+                }
+            }
+            multiButton.setOnClickListener {
+                currentPlaylist?.let {
+                    onButtonClick(it)
                 }
             }
         }
@@ -33,6 +40,8 @@ class PlaylistListAdapter(private val onClick: (Playlist) -> Unit) :
             currentPlaylist = playlist
 
             playlistTextView.text = playlist.name
+            if (btnText.isNullOrBlank()) { multiButton.visibility = View.GONE }
+            else { multiButton.text = btnText }
         }
     }
 
@@ -40,7 +49,7 @@ class PlaylistListAdapter(private val onClick: (Playlist) -> Unit) :
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PlaylistViewHolder {
         val view = LayoutInflater.from(parent.context)
                 .inflate(R.layout.playlist_item, parent, false)
-        return PlaylistViewHolder(view, onClick)
+        return PlaylistViewHolder(view, onClick, onButtonClick, btnText)
     }
 
     /* Gets current playlist and uses it to bind view. */

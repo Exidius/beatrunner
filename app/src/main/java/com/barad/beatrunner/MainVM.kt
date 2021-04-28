@@ -6,56 +6,64 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.barad.beatrunner.data.AppDatabase
 import com.barad.beatrunner.data.MusicStore
+import com.barad.beatrunner.data.PlaylistDao
 import com.barad.beatrunner.models.Music
+import com.barad.beatrunner.models.Playlist
+import com.barad.beatrunner.models.PlaylistWithMusics
 import com.barad.beatrunner.service.MusicService
 import com.google.android.exoplayer2.ui.PlayerControlView
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 class MainVM(
-        application: Application,
-        playerView: PlayerControlView
+        application: Application
 ) : ViewModel() {
 
-    private val _sensorTempo = MutableLiveData<Float>()
-    val sensorTempo
-        get() = _sensorTempo
+    private val _playlists = MutableLiveData<List<Playlist>>()
+    val playlists
+        get() = _playlists
 
-    private val _currentMusic = MutableLiveData<Music>()
-    val currentMusic
-        get() = _currentMusic
+    private val _playlistWithSongs = MutableLiveData<PlaylistWithMusics>()
+    val playlistWithSongs
+        get() = _playlistWithSongs
 
-    private val _steps = MutableLiveData<Int>()
-    val steps
-        get() = _steps
-
-    private var _musicService = MutableLiveData<MusicService>()
-    val musicService
-        get() = _musicService
-
-    //var sensorService: SensorService = SensorService(application.getSystemService(Context.SENSOR_SERVICE) as SensorManager)
-
-
+    val playlistDao = AppDatabase.getInstance(application).playlistDao()
+    val playlistMusicDao = AppDatabase.getInstance(application).playlistMusicDao()
     val musicDao = AppDatabase.getInstance(application).musicDao()
     val musicStore = MusicStore(application, musicDao)
 
     init{
-        //sensorService.register()
+        getAllPlaylist()
+    }
+
+    fun getAllPlaylist() {
+        GlobalScope.launch {
+        val asd = playlistDao.getAll()
+            playlists.postValue(asd)
+        }
     }
 
     fun getAllMusicFromDevice() {
         musicStore.getAllMusicFromDevice(true)
+    }
+
+    fun changePlaylist() {
 
     }
 
-
+    fun getAllSongForPlaylist(playlistId: Int) {
+        GlobalScope.launch {
+            playlistWithSongs.postValue(playlistMusicDao.getPlaylistByIdWithMusics(playlistId))
+        }
+    }
 }
 
 class MainVMFactory(
-        private val application: Application,
-        private val playerView: PlayerControlView
+        private val application: Application
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(MainVM::class.java)) {
-            return MainVM(application, playerView) as T
+            return MainVM(application) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

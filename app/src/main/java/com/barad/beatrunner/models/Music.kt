@@ -23,6 +23,12 @@ data class Music(
 
     var path: String,
 
-    var tempo: Float) : Parcelable {
+    var tempo: Float,
+
+    var startTime: Long = 0,
+
+    var endTime: Long = 0,
+
+    var allowTempoChange: Boolean = true) : Parcelable {
     override fun toString(): String = "$artist - $title t: $tempo at: $uri | $path id: $musicId"
 }
