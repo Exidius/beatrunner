@@ -18,7 +18,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.widget.Switch
 import android.widget.TextView
+import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
@@ -43,6 +45,7 @@ class MainFragment : Fragment() {
     private lateinit var tvSteps: TextView
     private lateinit var tvMusicTempo: TextView
     private lateinit var inputTempo: EditText
+    private lateinit var switchAdaptiveTempo: Switch
 
     private lateinit var application: Application
 
@@ -97,7 +100,7 @@ class MainFragment : Fragment() {
             tvSteps = view.findViewById(R.id.tv_steps)
             tvMusicTempo = view.findViewById(R.id.tv_music_tempo)
             inputTempo = view.findViewById(R.id.et_tempo)
-
+            switchAdaptiveTempo = view.findViewById(R.id.switchAllowTempoChange)
 
             val playlistAdapter = PlaylistListAdapter(
                     { playlist -> adapterOnClick(playlist) },
@@ -126,6 +129,10 @@ class MainFragment : Fragment() {
                 inputTempo.text.toString().toFloatOrNull()?.let { it1 ->
                     musicService?.onTempoChangeFromUi(it1)
                 }
+            }
+
+            switchAdaptiveTempo.setOnCheckedChangeListener { _, isChecked ->
+                musicService?.ALLOW_TEMPO_CHANGE = isChecked
             }
         }
         return view

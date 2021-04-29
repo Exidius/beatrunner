@@ -28,8 +28,10 @@ import kotlin.math.sqrt
 
 class MusicService : LifecycleService(), SensorEventListener {
 
-    var MAX_TEMPO_DIFFERENCE = 15
-    var SIGNIFICANT_TEMPO_DIFFERENCE = 5
+    var MAX_TEMPO_DIFFERENCE = 20
+    var SIGNIFICANT_TEMPO_DIFFERENCE = 3
+    var ALLOW_TEMPO_CHANGE = true
+    var MINIMUM_THRESHOLD = 12
 
     private val _sensorTempo = MutableLiveData<Float>()
     val sensorTempo
@@ -54,6 +56,7 @@ class MusicService : LifecycleService(), SensorEventListener {
     private val sensorQueue: Queue<Float> = LinkedList()
     private val timeQueue: Queue<Instant> = LinkedList()
     private var latest = Instant.now()
+    private var currentThreshold = 0f
 
     private var lastSongTempo = 0f
 
@@ -185,7 +188,7 @@ class MusicService : LifecycleService(), SensorEventListener {
     private fun setPlayback(musicList: List<Music>, allowSpeedChange: Boolean = true) {
         setPlayerPlaylist(musicList)
 
-        if(allowSpeedChange) {
+        if(allowSpeedChange && ALLOW_TEMPO_CHANGE) {
             changePlaybackSpeed()
         }
     }
@@ -288,11 +291,9 @@ class MusicService : LifecycleService(), SensorEventListener {
         sensorManager = application.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         sensorGyro = sensorManager!!.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
         sensorAcc = sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-        sensorLinAcc = sensorManager!!.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
 
-        sensorManager!!.registerListener(this, sensorGyro, SensorManager.SENSOR_DELAY_GAME)
-        sensorManager!!.registerListener(this, sensorAcc, SensorManager.SENSOR_DELAY_GAME)
-        sensorManager!!.registerListener(this, sensorLinAcc, SensorManager.SENSOR_DELAY_GAME)
+        sensorManager!!.registerListener(this, sensorGyro, SensorManager.SENSOR_DELAY_FASTEST)
+        sensorManager!!.registerListener(this, sensorAcc, SensorManager.SENSOR_DELAY_FASTEST)
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
@@ -316,7 +317,6 @@ class MusicService : LifecycleService(), SensorEventListener {
                 var diff2 = Instant.now().toEpochMilli() - startOfDifference.toEpochMilli()
                 Log.d("barad-asd", "${isDifferenceSignificant} ${diff2} ${sensorTempo.value} ${currentPlaybackTempo} ${currentMusic.value?.tempo}")
             }
-
             when (event.sensor.type) {
                 Sensor.TYPE_ACCELEROMETER -> {
                     val x: Float = event.values[0]
@@ -324,9 +324,10 @@ class MusicService : LifecycleService(), SensorEventListener {
                     val z: Float = event.values[2]
 
                     sensorQueue.add(sqrt(x * x + y * y + z * z))
-                    if (sensorQueue.average() > 25) {
+                    if (sensorQueue.average() > currentThreshold && sensorQueue.average() > MINIMUM_THRESHOLD) {
+                        currentThreshold = sensorQueue.average().toFloat()
                         val diff = Instant.now().toEpochMilli() - latest.toEpochMilli()
-                        if (diff > 150) {
+                        if (diff > 250) {
                             latest = Instant.now()
                             timeQueue.add(Instant.now())
                             steps.value = steps.value?.plus(1)
@@ -348,6 +349,10 @@ class MusicService : LifecycleService(), SensorEventListener {
                         }
                         sensorTempo.value = (60f / (sum / (timeInstantList.size - 1)) * 1000f)
                     }
+
+                    Log.d("barad-lll", "${currentThreshold} ${sensorQueue.average()} ${(sensorQueue.average() > currentThreshold)}")
+
+                    currentThreshold *= 0.997f
                 }
                 else -> {
                 }
