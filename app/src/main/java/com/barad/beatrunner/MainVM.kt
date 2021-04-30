@@ -5,13 +5,8 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.barad.beatrunner.data.AppDatabase
-import com.barad.beatrunner.data.MusicStore
-import com.barad.beatrunner.data.PlaylistDao
-import com.barad.beatrunner.models.Music
 import com.barad.beatrunner.models.Playlist
 import com.barad.beatrunner.models.PlaylistWithMusics
-import com.barad.beatrunner.service.MusicService
-import com.google.android.exoplayer2.ui.PlayerControlView
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 

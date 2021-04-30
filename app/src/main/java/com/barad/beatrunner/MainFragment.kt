@@ -11,7 +11,6 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
-import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -20,20 +19,18 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.Switch
 import android.widget.TextView
-import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.barad.beatrunner.models.Playlist
 import com.barad.beatrunner.playlistlist.PlaylistListAdapter
-import com.barad.beatrunner.playlistlist.PlaylistListFragmentDirections
-import com.barad.beatrunner.service.MusicService
+import com.barad.beatrunner.service.ForegroundService
 import com.google.android.exoplayer2.ui.PlayerControlView
 
 class MainFragment : Fragment() {
 
-    private var musicService: MusicService? = null
+    private var foregroundService: ForegroundService? = null
 
     private lateinit var viewModel: MainVM
 
@@ -51,22 +48,22 @@ class MainFragment : Fragment() {
 
     val connection = object : ServiceConnection {
         override fun onServiceDisconnected(name: ComponentName?) {
-            musicService = null
+            foregroundService = null
         }
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            if (service is MusicService.MusicServiceBinder) {
+            if (service is ForegroundService.MusicServiceBinder) {
                 playerView.player = service.getPlayerInstance()
-                musicService = service.service
+                foregroundService = service.service
 
-                musicService?.steps?.observe(viewLifecycleOwner, {
+                foregroundService?.steps?.observe(viewLifecycleOwner, {
                     tvTempo.setText(it.toString())
                 })
 
-                musicService?.sensorTempo?.observe(viewLifecycleOwner, {
+                foregroundService?.sensorTempo?.observe(viewLifecycleOwner, {
                     tvSteps.setText(it.toString())
                 })
 
-                musicService?.currentMusic?.observe(viewLifecycleOwner, {
+                foregroundService?.currentMusic?.observe(viewLifecycleOwner, {
                     tv_title.setText("${it.artist} - ${it.title}")
                     tvMusicTempo.setText(it.tempo.toString())
                 })
@@ -118,21 +115,21 @@ class MainFragment : Fragment() {
             })
 
             viewModel.playlistWithSongs.observe(viewLifecycleOwner,{
-                musicService?.changePlaylist(it.songs)
+                foregroundService?.changePlaylist(it.songs)
             })
 
-            requireActivity().startService(Intent(requireActivity(), MusicService::class.java))
+            requireActivity().startService(Intent(requireActivity(), ForegroundService::class.java))
             requireActivity().bindService(Intent(requireActivity(),
-                    MusicService::class.java), connection, Context.BIND_AUTO_CREATE)
+                    ForegroundService::class.java), connection, Context.BIND_AUTO_CREATE)
 
             btnTempo.setOnClickListener {
                 inputTempo.text.toString().toFloatOrNull()?.let { it1 ->
-                    musicService?.onTempoChangeFromUi(it1)
+                    foregroundService?.onTempoChangeFromUi(it1)
                 }
             }
 
             switchAdaptiveTempo.setOnCheckedChangeListener { _, isChecked ->
-                musicService?.ALLOW_TEMPO_CHANGE = isChecked
+                foregroundService?.ALLOW_TEMPO_CHANGE = isChecked
             }
         }
         return view

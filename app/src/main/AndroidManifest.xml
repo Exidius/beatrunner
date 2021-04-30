@@ -20,7 +20,7 @@
             </intent-filter>
         </activity>
         <service
-            android:name=".service.MusicService"
+            android:name=".service.ForegroundService"
             android:stopWithTask="true">
         </service>
     </application>

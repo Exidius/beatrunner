@@ -26,12 +26,11 @@ import kotlin.math.abs
 import kotlin.math.sqrt
 
 
-class MusicService : LifecycleService(), SensorEventListener {
+class ForegroundService : LifecycleService(), SensorEventListener {
 
     var MAX_TEMPO_DIFFERENCE = 20
     var SIGNIFICANT_TEMPO_DIFFERENCE = 3
     var ALLOW_TEMPO_CHANGE = true
-    var MINIMUM_THRESHOLD = 12
 
     private val _sensorTempo = MutableLiveData<Float>()
     val sensorTempo
@@ -49,14 +48,12 @@ class MusicService : LifecycleService(), SensorEventListener {
     val currentPlaylist
         get() = _currentPlaylist
 
+    val accelerationStepDetector = AccelerationStepDetector(_steps, _sensorTempo)
+    val gyroscopeStepDetector = GyroscopeStepDetector(_steps, _sensorTempo)
+
     private var sensorManager: SensorManager? = null
     private var sensorGyro: Sensor? = null
     private var sensorAcc: Sensor? = null
-    private var sensorLinAcc: Sensor? = null
-    private val sensorQueue: Queue<Float> = LinkedList()
-    private val timeQueue: Queue<Instant> = LinkedList()
-    private var latest = Instant.now()
-    private var currentThreshold = 0f
 
     private var lastSongTempo = 0f
 
@@ -140,7 +137,7 @@ class MusicService : LifecycleService(), SensorEventListener {
     }
 
     fun onTempoChangeFromUi(tempo: Float) {
-        timeQueue.clear()
+        accelerationStepDetector.timeQueue.clear()
         sensorTempo.value = tempo
     }
 
@@ -284,16 +281,19 @@ class MusicService : LifecycleService(), SensorEventListener {
     inner class MusicServiceBinder : Binder() {
         fun getPlayerInstance() = player
         val service
-            get() = this@MusicService
+            get() = this@ForegroundService
     }
 
-    private fun registerManager() {
+    private fun registerManager(delay: Int = SensorManager.SENSOR_DELAY_FASTEST) {
         sensorManager = application.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+
         sensorGyro = sensorManager!!.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
         sensorAcc = sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
-        sensorManager!!.registerListener(this, sensorGyro, SensorManager.SENSOR_DELAY_FASTEST)
-        sensorManager!!.registerListener(this, sensorAcc, SensorManager.SENSOR_DELAY_FASTEST)
+        sensorManager!!.registerListener(this, sensorGyro, delay)
+        sensorManager!!.registerListener(this, sensorAcc, delay)
+
+        gyroscopeStepDetector.startTimer()
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
@@ -311,48 +311,14 @@ class MusicService : LifecycleService(), SensorEventListener {
                     Instant.now().toEpochMilli() - startOfDifference.toEpochMilli() > 3000) {
 
                     changePlaybackSpeed()
-
                 }
-
-                var diff2 = Instant.now().toEpochMilli() - startOfDifference.toEpochMilli()
-                Log.d("barad-asd", "${isDifferenceSignificant} ${diff2} ${sensorTempo.value} ${currentPlaybackTempo} ${currentMusic.value?.tempo}")
             }
             when (event.sensor.type) {
                 Sensor.TYPE_ACCELEROMETER -> {
-                    val x: Float = event.values[0]
-                    val y: Float = event.values[1]
-                    val z: Float = event.values[2]
-
-                    sensorQueue.add(sqrt(x * x + y * y + z * z))
-                    if (sensorQueue.average() > currentThreshold && sensorQueue.average() > MINIMUM_THRESHOLD) {
-                        currentThreshold = sensorQueue.average().toFloat()
-                        val diff = Instant.now().toEpochMilli() - latest.toEpochMilli()
-                        if (diff > 250) {
-                            latest = Instant.now()
-                            timeQueue.add(Instant.now())
-                            steps.value = steps.value?.plus(1)
-                        }
-                    }
-
-                    if (sensorQueue.size > 10) {
-                        sensorQueue.remove()
-                    }
-                    if (timeQueue.size > 10) {
-                        timeQueue.remove()
-                    }
-
-                    if (timeQueue.size > 2) {
-                        val timeInstantList: List<Instant> = timeQueue.map { x -> x }
-                        var sum: Long = 0
-                        for (i in 1 until timeInstantList.size) {
-                            sum += timeInstantList[i].toEpochMilli() - timeInstantList[i - 1].toEpochMilli()
-                        }
-                        sensorTempo.value = (60f / (sum / (timeInstantList.size - 1)) * 1000f)
-                    }
-
-                    Log.d("barad-lll", "${currentThreshold} ${sensorQueue.average()} ${(sensorQueue.average() > currentThreshold)}")
-
-                    currentThreshold *= 0.997f
+                    accelerationStepDetector.onSensorEvent(event)
+                }
+                Sensor.TYPE_GYROSCOPE -> {
+                    gyroscopeStepDetector.onSensorEvent(event)
                 }
                 else -> {
                 }
@@ -364,6 +330,7 @@ class MusicService : LifecycleService(), SensorEventListener {
         playerNotificationManager?.setPlayer(null)
         playerNotificationManager = null
         sensorManager?.unregisterListener(this)
+        gyroscopeStepDetector.stopTimer()
         super.onDestroy()
     }
 
