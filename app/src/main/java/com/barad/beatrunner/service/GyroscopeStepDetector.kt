@@ -8,7 +8,7 @@ import kotlin.math.sqrt
 import java.time.Instant
 import java.util.*
 
-class GyroscopeStepDetector(private val steps: MutableLiveData<Int>,
+class GyroscopeStepDetector(private val steps: MutableLiveData<Float>,
                             private val sensorTempo: MutableLiveData<Float>) {
 
     private var x: Float = 0f
@@ -57,11 +57,10 @@ class GyroscopeStepDetector(private val steps: MutableLiveData<Int>,
 
                     }
 
-
                     val indexOfMaxBin = bins.indexOfFirst { it == bins.maxOrNull() }
 
                     if(indexOfMaxBin != -1) {
-                        if (indexOfMaxBin != 0 && indexOfMaxBin != input.size / 2) {
+                        if (indexOfMaxBin != 0 && indexOfMaxBin < 31) {
                             val p = 0.5f * ((bins[indexOfMaxBin - 1] - bins[indexOfMaxBin + 1]) /
                                     (bins[indexOfMaxBin - 1] - 2 * bins[indexOfMaxBin] + bins[indexOfMaxBin + 1]))
 
@@ -70,7 +69,14 @@ class GyroscopeStepDetector(private val steps: MutableLiveData<Int>,
                             val peakFrequency = interpolatedLocation * 20 / 64
                             val peakValue = bins[indexOfMaxBin] - 0.25f * (bins[indexOfMaxBin-1] - bins[indexOfMaxBin+1]) * p
 
-                            Log.d("barad-gyr", "$peakValue $peakFrequency")
+
+
+                            if ( peakValue > 20 ) {
+                                sensorTempo.postValue(peakFrequency * 60)
+                                steps.postValue(steps.value?.plus(peakFrequency * 0.05f))
+                            }
+
+                            Log.d("barad-gyr", "${sensorTempo.value} ${steps.value}")
                         }
                     }
                 }

@@ -36,9 +36,17 @@ class ForegroundService : LifecycleService(), SensorEventListener {
     val sensorTempo
         get() = _sensorTempo
 
-    private val _steps = MutableLiveData<Int>()
+    private val _steps = MutableLiveData<Float>()
     val steps
         get() = _steps
+
+    private val _gyroSensorTempo = MutableLiveData<Float>()
+    val gyroSensorTempo
+        get() = _gyroSensorTempo
+
+    private val _gyroSteps = MutableLiveData<Float>()
+    val gyroSteps
+        get() = _gyroSteps
 
     private val _currentMusic = MutableLiveData<Music>()
     val currentMusic
@@ -49,7 +57,7 @@ class ForegroundService : LifecycleService(), SensorEventListener {
         get() = _currentPlaylist
 
     val accelerationStepDetector = AccelerationStepDetector(_steps, _sensorTempo)
-    val gyroscopeStepDetector = GyroscopeStepDetector(_steps, _sensorTempo)
+    val gyroscopeStepDetector = GyroscopeStepDetector(_gyroSteps, _gyroSensorTempo)
 
     private var sensorManager: SensorManager? = null
     private var sensorGyro: Sensor? = null
@@ -86,7 +94,9 @@ class ForegroundService : LifecycleService(), SensorEventListener {
         currentPlaylist.value = listOf(placeHolderMusic)
         currentMusic.value = placeHolderMusic
         sensorTempo.value = 0f
-        steps.value = 0
+        steps.value = 0f
+        gyroSensorTempo.value = 0f
+        gyroSteps.value = 0f
 
         currentPlaylist.observe(this, {
             switchSong()
@@ -133,7 +143,10 @@ class ForegroundService : LifecycleService(), SensorEventListener {
     }
 
     fun resetSteps() {
-        steps.value = 0
+        sensorTempo.value = 0f
+        steps.value = 0f
+        gyroSensorTempo.value = 0f
+        gyroSteps.value = 0f
     }
 
     fun onTempoChangeFromUi(tempo: Float) {

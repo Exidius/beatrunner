@@ -8,7 +8,7 @@ import java.util.*
 import kotlin.math.sqrt
 
 class AccelerationStepDetector(
-        private val steps: MutableLiveData<Int>,
+        private val steps: MutableLiveData<Float>,
         private val sensorTempo: MutableLiveData<Float>) {
 
     var MINIMUM_THRESHOLD = 12

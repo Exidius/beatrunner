@@ -40,8 +40,12 @@ class MainFragment : Fragment() {
     private lateinit var tv_title: TextView
     private lateinit var tvTempo: TextView
     private lateinit var tvSteps: TextView
+    private lateinit var tvTempo2: TextView
+    private lateinit var tvSteps2: TextView
+    private lateinit var btnResetSteps: Button
     private lateinit var tvMusicTempo: TextView
     private lateinit var inputTempo: EditText
+    @SuppressLint("UseSwitchCompatOrMaterialCode")
     private lateinit var switchAdaptiveTempo: Switch
 
     private lateinit var application: Application
@@ -56,11 +60,19 @@ class MainFragment : Fragment() {
                 foregroundService = service.service
 
                 foregroundService?.steps?.observe(viewLifecycleOwner, {
-                    tvTempo.setText(it.toString())
+                    tvSteps.setText(it.toString())
                 })
 
                 foregroundService?.sensorTempo?.observe(viewLifecycleOwner, {
-                    tvSteps.setText(it.toString())
+                    tvTempo.setText(it.toString())
+                })
+
+                foregroundService?.gyroSteps?.observe(viewLifecycleOwner, {
+                    tvSteps2.setText(it.toString())
+                })
+
+                foregroundService?.gyroSensorTempo?.observe(viewLifecycleOwner, {
+                    tvTempo2.setText(it.toString())
                 })
 
                 foregroundService?.currentMusic?.observe(viewLifecycleOwner, {
@@ -93,8 +105,11 @@ class MainFragment : Fragment() {
             btnTempo = view.findViewById(R.id.btn_setTempo)
 
             tv_title = view.findViewById(R.id.tv_title)
-            tvTempo = view.findViewById(R.id.tv_tempo)
-            tvSteps = view.findViewById(R.id.tv_steps)
+            tvTempo = view.findViewById(R.id.tv_tempoLabel)
+            tvSteps = view.findViewById(R.id.tv_stepsLabel)
+            tvTempo2 = view.findViewById(R.id.tv_tempo2Label)
+            tvSteps2 = view.findViewById(R.id.tv_steps2Label)
+            btnResetSteps = view.findViewById(R.id.btnResetSteps)
             tvMusicTempo = view.findViewById(R.id.tv_music_tempo)
             inputTempo = view.findViewById(R.id.et_tempo)
             switchAdaptiveTempo = view.findViewById(R.id.switchAllowTempoChange)
@@ -118,6 +133,7 @@ class MainFragment : Fragment() {
                 foregroundService?.changePlaylist(it.songs)
             })
 
+
             requireActivity().startService(Intent(requireActivity(), ForegroundService::class.java))
             requireActivity().bindService(Intent(requireActivity(),
                     ForegroundService::class.java), connection, Context.BIND_AUTO_CREATE)
@@ -126,6 +142,10 @@ class MainFragment : Fragment() {
                 inputTempo.text.toString().toFloatOrNull()?.let { it1 ->
                     foregroundService?.onTempoChangeFromUi(it1)
                 }
+            }
+
+            btnResetSteps.setOnClickListener {
+                foregroundService?.resetSteps()
             }
 
             switchAdaptiveTempo.setOnCheckedChangeListener { _, isChecked ->
