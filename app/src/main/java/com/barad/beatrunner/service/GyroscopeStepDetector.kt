@@ -66,9 +66,11 @@ class GyroscopeStepDetector(private val steps: MutableLiveData<Int>,
                                     (bins[indexOfMaxBin - 1] - 2 * bins[indexOfMaxBin] + bins[indexOfMaxBin + 1]))
 
                             val interpolatedLocation = indexOfMaxBin + p
-                            //sensorTempo.value = interpolatedLocation * 20 / 64
 
-                            Log.d("barad-gyr", "$indexOfMaxBin ${interpolatedLocation * 20 / 64}")
+                            val peakFrequency = interpolatedLocation * 20 / 64
+                            val peakValue = bins[indexOfMaxBin] - 0.25f * (bins[indexOfMaxBin-1] - bins[indexOfMaxBin+1]) * p
+
+                            Log.d("barad-gyr", "$peakValue $peakFrequency")
                         }
                     }
                 }
