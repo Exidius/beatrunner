@@ -12,7 +12,7 @@ class AccelerationStepDetector(
         private val steps: MutableLiveData<Float>,
         private val sensorTempo: MutableLiveData<Float>) {
 
-    var MINIMUM_THRESHOLD = 12
+    val MINIMUM_THRESHOLD = 12
     val ALPHA = 0.9f
 
     private var x: Float = 0f

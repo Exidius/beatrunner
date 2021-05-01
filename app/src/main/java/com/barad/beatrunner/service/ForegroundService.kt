@@ -312,6 +312,8 @@ class ForegroundService : LifecycleService(), SensorEventListener {
     override fun onSensorChanged(event: SensorEvent?) {
         if (event != null) {
 
+            checkTempoDifference()
+
             if(startOfDifference != Instant.MAX && sensorTempo.value != 0f) {
                 if (isDifferenceSignificant && isDifferenceMax &&
                     Instant.now().toEpochMilli() - startOfDifference.toEpochMilli() > 3000) {
