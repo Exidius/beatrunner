@@ -1,9 +1,8 @@
 package com.barad.beatrunner.service
 
+import android.content.Context
 import android.hardware.SensorEvent
-import android.util.Log
 import androidx.lifecycle.MutableLiveData
-import com.paramsen.noise.Noise
 import java.time.Instant
 import java.util.*
 import kotlin.math.sqrt
@@ -67,6 +66,7 @@ class AccelerationStepDetector(
                 if (currentThreshold > MINIMUM_THRESHOLD) {
                     currentThreshold -= 0.02f
                 }
+
             }
         },0,10)
     }

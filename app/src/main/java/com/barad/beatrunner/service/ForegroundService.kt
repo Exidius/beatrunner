@@ -20,6 +20,10 @@ import com.barad.beatrunner.data.MusicDao
 import com.barad.beatrunner.models.Music
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.ui.PlayerNotificationManager
+import java.io.BufferedWriter
+import java.io.File
+import java.io.FileOutputStream
+import java.io.FileWriter
 import java.time.Instant
 import java.util.*
 import kotlin.math.abs
@@ -30,6 +34,10 @@ class ForegroundService : LifecycleService(), SensorEventListener {
     var MAX_TEMPO_DIFFERENCE = 20
     var SIGNIFICANT_TEMPO_DIFFERENCE = 3
     var ALLOW_TEMPO_CHANGE = true
+
+    private lateinit var context: Context
+
+    private val logTimer = Timer()
 
     private val _sensorTempo = MutableLiveData<Float>()
     val sensorTempo
@@ -104,12 +112,14 @@ class ForegroundService : LifecycleService(), SensorEventListener {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
+        context = applicationContext
         return START_NOT_STICKY
     }
 
     override fun onBind(intent: Intent): IBinder? {
         super.onBind(intent)
         intent.let {
+            context = applicationContext
             displayNotification()
             registerManager()
         }
@@ -125,6 +135,35 @@ class ForegroundService : LifecycleService(), SensorEventListener {
             lastSongTempo = currentMusic.value?.tempo!!
             player.playWhenReady = true
         }
+    }
+
+    fun startTimer() {
+        val startTime = Instant.now().toEpochMilli()
+        logTimer.schedule(object : TimerTask() {
+            override fun run() {
+                val line = "t: ${Instant.now().toEpochMilli()} gs: ${gyroSteps.value} gt: ${gyroSensorTempo.value} as: ${steps.value} at: ${sensorTempo.value} ${System.lineSeparator()}"
+
+                val file = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS+"/tempolog-${startTime}.txt").toURI())
+
+                if(file.exists()) {
+                    val fileWriter = FileWriter(
+                        Environment.getExternalStoragePublicDirectory(
+                            Environment.DIRECTORY_DOCUMENTS + "/tempolog-${startTime}.txt"
+                        ),
+                        true
+                    )
+                    val out = BufferedWriter(fileWriter)
+                    out.write(line)
+                    out.close()
+                } else {
+                    file.createNewFile();
+                }
+            }
+        },0,1000)
+    }
+
+    fun stopTimer() {
+        logTimer.cancel()
     }
 
     fun playNextInPlaylist() {

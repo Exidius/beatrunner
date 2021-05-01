@@ -37,6 +37,8 @@ class MainFragment : Fragment() {
     private lateinit var playerView: PlayerControlView
 
     private lateinit var btnTempo: Button
+    private lateinit var btnStartLog: Button
+    private lateinit var btnStopLog: Button
     private lateinit var tv_title: TextView
     private lateinit var tvTempo: TextView
     private lateinit var tvSteps: TextView
@@ -113,6 +115,9 @@ class MainFragment : Fragment() {
             tvMusicTempo = view.findViewById(R.id.tv_music_tempo)
             inputTempo = view.findViewById(R.id.et_tempo)
             switchAdaptiveTempo = view.findViewById(R.id.switchAllowTempoChange)
+            btnStartLog = view.findViewById(R.id.btnStartLog)
+            btnStopLog = view.findViewById(R.id.btnStopLog)
+
 
             val playlistAdapter = PlaylistListAdapter(
                     { playlist -> adapterOnClick(playlist) },
@@ -146,6 +151,14 @@ class MainFragment : Fragment() {
 
             btnResetSteps.setOnClickListener {
                 foregroundService?.resetSteps()
+            }
+
+            btnStartLog.setOnClickListener {
+                foregroundService?.startTimer()
+            }
+
+            btnStopLog.setOnClickListener {
+                foregroundService?.stopTimer()
             }
 
             switchAdaptiveTempo.setOnCheckedChangeListener { _, isChecked ->

@@ -75,8 +75,6 @@ class GyroscopeStepDetector(private val steps: MutableLiveData<Float>,
                                 sensorTempo.postValue(peakFrequency * 60)
                                 steps.postValue(steps.value?.plus(peakFrequency * 0.05f))
                             }
-
-                            Log.d("barad-gyr", "${sensorTempo.value} ${steps.value}")
                         }
                     }
                 }

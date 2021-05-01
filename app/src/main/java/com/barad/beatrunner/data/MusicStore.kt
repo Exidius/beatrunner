@@ -41,7 +41,6 @@ class MusicStore(
             _musicsInDb = musicDao.getAll()
         }
 
-
         val audioCollection =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 MediaStore.Audio.Media.getContentUri(
