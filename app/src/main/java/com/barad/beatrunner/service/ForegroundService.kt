@@ -23,7 +23,6 @@ import com.google.android.exoplayer2.ui.PlayerNotificationManager
 import java.time.Instant
 import java.util.*
 import kotlin.math.abs
-import kotlin.math.sqrt
 
 
 class ForegroundService : LifecycleService(), SensorEventListener {
@@ -189,7 +188,7 @@ class ForegroundService : LifecycleService(), SensorEventListener {
             }
         }
         if (songsMatchTempo.isEmpty()) {
-            currentPlaylist.value?.let { setPlayback(it,false) }
+            currentPlaylist.value?.let { setPlayback(it, false) }
         } else {
             setPlayback(songsMatchTempo)
         }
@@ -307,12 +306,11 @@ class ForegroundService : LifecycleService(), SensorEventListener {
         sensorManager!!.registerListener(this, sensorAcc, delay)
 
         gyroscopeStepDetector.startTimer()
+        accelerationStepDetector.startTimer()
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
         if (event != null) {
-
-            checkTempoDifference()
 
             if(startOfDifference != Instant.MAX && sensorTempo.value != 0f) {
                 if (isDifferenceSignificant && isDifferenceMax &&
@@ -344,6 +342,7 @@ class ForegroundService : LifecycleService(), SensorEventListener {
         playerNotificationManager = null
         sensorManager?.unregisterListener(this)
         gyroscopeStepDetector.stopTimer()
+        accelerationStepDetector.stopTimer()
         super.onDestroy()
     }
 
