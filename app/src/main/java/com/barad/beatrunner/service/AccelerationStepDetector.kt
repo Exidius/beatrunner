@@ -13,6 +13,7 @@ class AccelerationStepDetector(
         private val sensorTempo: MutableLiveData<Float>) {
 
     var MINIMUM_THRESHOLD = 12
+    val ALPHA = 0.9f
 
     private var x: Float = 0f
     private var y: Float = 0f
@@ -28,8 +29,15 @@ class AccelerationStepDetector(
     fun startTimer() {
         timer.schedule(object : TimerTask() {
             override fun run() {
-                sensorQueue.add(sqrt(x * x + y * y + z * z))
-                if (sensorQueue.average() > currentThreshold && sensorQueue.average() > MINIMUM_THRESHOLD) {
+                if (!sensorQueue.isEmpty()) {
+                    sensorQueue.add(ALPHA * sensorQueue.last() +
+                            (1 - ALPHA)*sqrt(x * x + y * y + z * z))
+                }else {
+                    sensorQueue.add(sqrt(x * x + y * y + z * z))
+                }
+
+                if (sensorQueue.average() > currentThreshold &&
+                    sensorQueue.average() > MINIMUM_THRESHOLD) {
                     currentThreshold = sensorQueue.average().toFloat() - 1
                     val diff = Instant.now().toEpochMilli() - latest.toEpochMilli()
                     if (diff > 250) {
@@ -50,7 +58,8 @@ class AccelerationStepDetector(
                     val timeInstantList: List<Instant> = timeQueue.map { x -> x }
                     var sum: Long = 0
                     for (i in 1 until timeInstantList.size) {
-                        sum += timeInstantList[i].toEpochMilli() - timeInstantList[i - 1].toEpochMilli()
+                        sum += timeInstantList[i].toEpochMilli() -
+                                timeInstantList[i - 1].toEpochMilli()
                     }
                     sensorTempo.postValue(60f / (sum / (timeInstantList.size - 1)) * 1000f)
                 }
