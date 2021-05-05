@@ -35,8 +35,8 @@ class AccelerationStepDetector(
                     sensorQueue.add(sqrt(x * x + y * y + z * z))
                 }
 
-                if (sensorQueue.average() > currentThreshold &&
-                    sensorQueue.average() > MINIMUM_THRESHOLD) {
+                if (sensorQueue.last() > currentThreshold &&
+                    sensorQueue.last() > MINIMUM_THRESHOLD) {
                     currentThreshold = sensorQueue.average().toFloat() - 1
                     val diff = Instant.now().toEpochMilli() - latest.toEpochMilli()
                     if (diff > 250) {
@@ -46,7 +46,7 @@ class AccelerationStepDetector(
                     }
                 }
 
-                if (sensorQueue.size > 10) {
+                if (sensorQueue.size > 2) {
                     sensorQueue.remove()
                 }
                 if (timeQueue.size > 10) {
@@ -64,7 +64,7 @@ class AccelerationStepDetector(
                 }
 
                 if (currentThreshold > MINIMUM_THRESHOLD) {
-                    currentThreshold -= 0.02f
+                    currentThreshold -= 0.01f
                 }
 
             }

@@ -71,7 +71,7 @@ class GyroscopeStepDetector(private val steps: MutableLiveData<Float>,
 
 
 
-                            if ( peakValue > 20 ) {
+                            if ( peakValue > 5 ) {
                                 sensorTempo.postValue(peakFrequency * 60)
                                 steps.postValue(steps.value?.plus(peakFrequency * 0.05f))
                             }

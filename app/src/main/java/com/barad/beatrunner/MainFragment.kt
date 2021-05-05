@@ -92,79 +92,77 @@ class MainFragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_main, container, false)
         application = requireNotNull(this.activity).application
 
-        if(isStoragePermissionGranted()) {
+        playerView = view.findViewById(R.id.player_view)
+        playerView.showShuffleButton = true
+        playerView.setShowFastForwardButton(false)
+        playerView.setShowRewindButton(false)
+        playerView.showTimeoutMs = 0
 
-            playerView = view.findViewById(R.id.player_view)
-            playerView.showShuffleButton = true
-            playerView.setShowFastForwardButton(false)
-            playerView.setShowRewindButton(false)
-            playerView.showTimeoutMs = 0
+        val mainVMFactory = MainVMFactory(application)
 
-            val mainVMFactory = MainVMFactory(application)
+        viewModel = ViewModelProvider(this, mainVMFactory).get(MainVM::class.java)
 
-            viewModel = ViewModelProvider(this, mainVMFactory).get(MainVM::class.java)
+        btnTempo = view.findViewById(R.id.btn_setTempo)
 
-            btnTempo = view.findViewById(R.id.btn_setTempo)
-
-            tv_title = view.findViewById(R.id.tv_title)
-            tvTempo = view.findViewById(R.id.tv_tempoLabel)
-            tvSteps = view.findViewById(R.id.tv_stepsLabel)
-            tvTempo2 = view.findViewById(R.id.tv_tempo2Label)
-            tvSteps2 = view.findViewById(R.id.tv_steps2Label)
-            btnResetSteps = view.findViewById(R.id.btnResetSteps)
-            tvMusicTempo = view.findViewById(R.id.tv_music_tempo)
-            inputTempo = view.findViewById(R.id.et_tempo)
-            switchAdaptiveTempo = view.findViewById(R.id.switchAllowTempoChange)
-            btnStartLog = view.findViewById(R.id.btnStartLog)
-            btnStopLog = view.findViewById(R.id.btnStopLog)
+        tv_title = view.findViewById(R.id.tv_title)
+        tvTempo = view.findViewById(R.id.tv_tempoLabel)
+        tvSteps = view.findViewById(R.id.tv_stepsLabel)
+        tvTempo2 = view.findViewById(R.id.tv_tempo2Label)
+        tvSteps2 = view.findViewById(R.id.tv_steps2Label)
+        btnResetSteps = view.findViewById(R.id.btnResetSteps)
+        tvMusicTempo = view.findViewById(R.id.tv_music_tempo)
+        inputTempo = view.findViewById(R.id.et_tempo)
+        switchAdaptiveTempo = view.findViewById(R.id.switchAllowTempoChange)
+        btnStartLog = view.findViewById(R.id.btnStartLog)
+        btnStopLog = view.findViewById(R.id.btnStopLog)
 
 
-            val playlistAdapter = PlaylistListAdapter(
-                    { playlist -> adapterOnClick(playlist) },
-                    { playlist -> onButtonClick(playlist) },
-                    "Play"
-            )
+        val playlistAdapter = PlaylistListAdapter(
+                { playlist -> adapterOnClick(playlist) },
+                { playlist -> onButtonClick(playlist) },
+                "Play"
+        )
 
-            val recyclerView: RecyclerView = view.findViewById(R.id.main_playlist_recycle_view)
-            recyclerView.adapter = playlistAdapter
+        val recyclerView: RecyclerView = view.findViewById(R.id.main_playlist_recycle_view)
+        recyclerView.adapter = playlistAdapter
 
-            viewModel.playlists.observe(viewLifecycleOwner, {
-                it?.let { list ->
-                    playlistAdapter.submitList(list as MutableList<Playlist>)
-                }
-            })
-
-            viewModel.playlistWithSongs.observe(viewLifecycleOwner,{
-                foregroundService?.changePlaylist(it.songs)
-            })
-
-
-            requireActivity().startService(Intent(requireActivity(), ForegroundService::class.java))
-            requireActivity().bindService(Intent(requireActivity(),
-                    ForegroundService::class.java), connection, Context.BIND_AUTO_CREATE)
-
-            btnTempo.setOnClickListener {
-                inputTempo.text.toString().toFloatOrNull()?.let { it1 ->
-                    foregroundService?.onTempoChangeFromUi(it1)
-                }
+        viewModel.playlists.observe(viewLifecycleOwner, {
+            it?.let { list ->
+                playlistAdapter.submitList(list as MutableList<Playlist>)
             }
+        })
 
-            btnResetSteps.setOnClickListener {
-                foregroundService?.resetSteps()
-            }
+        viewModel.playlistWithSongs.observe(viewLifecycleOwner,{
+            foregroundService?.changePlaylist(it.songs)
+        })
 
-            btnStartLog.setOnClickListener {
-                foregroundService?.startTimer()
-            }
 
-            btnStopLog.setOnClickListener {
-                foregroundService?.stopTimer()
-            }
+        requireActivity().startService(Intent(requireActivity(), ForegroundService::class.java))
+        requireActivity().bindService(Intent(requireActivity(),
+                ForegroundService::class.java), connection, Context.BIND_AUTO_CREATE)
 
-            switchAdaptiveTempo.setOnCheckedChangeListener { _, isChecked ->
-                foregroundService?.ALLOW_TEMPO_CHANGE = isChecked
+        btnTempo.setOnClickListener {
+            inputTempo.text.toString().toFloatOrNull()?.let { it1 ->
+                foregroundService?.onTempoChangeFromUi(it1)
             }
         }
+
+        btnResetSteps.setOnClickListener {
+            foregroundService?.resetSteps()
+        }
+
+        btnStartLog.setOnClickListener {
+            foregroundService?.startTimer()
+        }
+
+        btnStopLog.setOnClickListener {
+            foregroundService?.stopTimer()
+        }
+
+        switchAdaptiveTempo.setOnCheckedChangeListener { _, isChecked ->
+            foregroundService?.ALLOW_TEMPO_CHANGE = isChecked
+        }
+
         return view
     }
 
@@ -182,23 +180,5 @@ class MainFragment : Fragment() {
 
     private fun onButtonClick(playlist: Playlist) {
         viewModel.getAllSongForPlaylist(playlist.playlistId)
-    }
-
-    @SuppressLint("ObsoleteSdkInt")
-    fun isStoragePermissionGranted(): Boolean {
-        return if (Build.VERSION.SDK_INT >= 23) {
-            if (checkSelfPermission(application.applicationContext, Manifest.permission.READ_EXTERNAL_STORAGE)
-                    == PackageManager.PERMISSION_GRANTED
-            ) {
-                true
-            } else { requestPermissions(
-                        arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
-                        1
-                )
-                false
-            }
-        } else {
-            true
-        }
     }
 }

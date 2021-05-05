@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/MainFragment">
+    app:startDestination="@id/askPermission">
 
     <fragment
         android:id="@+id/MainFragment"
@@ -58,5 +58,14 @@
         <action
             android:id="@+id/action_addSongToPlaylistFragment_to_PlaylistDetailFragment"
             app:destination="@id/PlaylistDetailFragment" />
+    </fragment>
+    <fragment
+            android:id="@+id/askPermission"
+            android:name="com.barad.beatrunner.AskPermission"
+            android:label="fragment_ask_permission"
+            tools:layout="@layout/fragment_ask_permission" >
+        <action
+                android:id="@+id/action_askPermission_to_MainFragment"
+                app:destination="@id/MainFragment" />
     </fragment>
 </navigation>
