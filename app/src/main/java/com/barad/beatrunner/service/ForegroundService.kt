@@ -22,7 +22,6 @@ import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.ui.PlayerNotificationManager
 import java.io.BufferedWriter
 import java.io.File
-import java.io.FileOutputStream
 import java.io.FileWriter
 import java.time.Instant
 import java.util.*
@@ -31,8 +30,14 @@ import kotlin.math.abs
 
 class ForegroundService : LifecycleService(), SensorEventListener {
 
-    var MAX_TEMPO_DIFFERENCE = 20
-    var SIGNIFICANT_TEMPO_DIFFERENCE = 3
+    inner class MusicServiceBinder : Binder() {
+        fun getPlayerInstance() = player
+        val service
+            get() = this@ForegroundService
+    }
+
+    private var MAX_TEMPO_DIFFERENCE = 20
+    private var SIGNIFICANT_TEMPO_DIFFERENCE = 3
     var ALLOW_TEMPO_CHANGE = true
 
     private lateinit var context: Context
@@ -63,8 +68,8 @@ class ForegroundService : LifecycleService(), SensorEventListener {
     val currentPlaylist
         get() = _currentPlaylist
 
-    val accelerationStepDetector = AccelerationStepDetector(_steps, _sensorTempo)
-    val gyroscopeStepDetector = GyroscopeStepDetector(_gyroSteps, _gyroSensorTempo)
+    private val accelerationStepDetector = AccelerationStepDetector(_steps, _sensorTempo)
+    private val gyroscopeStepDetector = GyroscopeStepDetector(_gyroSteps, _gyroSensorTempo)
 
     private var sensorManager: SensorManager? = null
     private var sensorGyro: Sensor? = null
@@ -175,11 +180,6 @@ class ForegroundService : LifecycleService(), SensorEventListener {
         currentPlaylist.value = songs
     }
 
-    private fun currentPlaylistIsNullOrDefault(): Boolean {
-        return currentPlaylist.value == null ||
-                currentPlaylist.value?.contains(placeHolderMusic) == true
-    }
-
     fun resetSteps() {
         sensorTempo.value = 0f
         steps.value = 0f
@@ -188,7 +188,7 @@ class ForegroundService : LifecycleService(), SensorEventListener {
     }
 
     fun onTempoChangeFromUi(tempo: Float) {
-        accelerationStepDetector.timeQueue.clear()
+        accelerationStepDetector.reset()
         sensorTempo.value = tempo
     }
 
@@ -327,12 +327,6 @@ class ForegroundService : LifecycleService(), SensorEventListener {
         musicDao = AppDatabase.getInstance(application).musicDao()
         musicEventListener = MusicEventListener(this, musicDao)
         player.addListener(musicEventListener)
-    }
-
-    inner class MusicServiceBinder : Binder() {
-        fun getPlayerInstance() = player
-        val service
-            get() = this@ForegroundService
     }
 
     private fun registerManager(delay: Int = SensorManager.SENSOR_DELAY_FASTEST) {

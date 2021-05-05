@@ -8,20 +8,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
-import android.widget.TextView
-import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.RecyclerView
 import com.barad.beatrunner.R
 import com.barad.beatrunner.models.Music
-import com.barad.beatrunner.models.Playlist
-import com.barad.beatrunner.playlistdetail.MusicListAdapter
-import com.barad.beatrunner.playlistlist.PlaylistListAdapter
-import com.barad.beatrunner.playlistlist.PlaylistListFragmentDirections
-import com.barad.beatrunner.playlistlist.PlaylistListVM
-import com.barad.beatrunner.playlistlist.PlaylistListVMFactory
 
 class PlaylistDetailFragment : Fragment() {
 

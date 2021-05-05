@@ -22,9 +22,8 @@ class MainVM(
     val playlistWithSongs
         get() = _playlistWithSongs
 
-    val playlistDao = AppDatabase.getInstance(application).playlistDao()
-    val playlistMusicDao = AppDatabase.getInstance(application).playlistMusicDao()
-    val musicDao = AppDatabase.getInstance(application).musicDao()
+    private val playlistDao = AppDatabase.getInstance(application).playlistDao()
+    private val playlistMusicDao = AppDatabase.getInstance(application).playlistMusicDao()
 
     init{
         getAllPlaylist()

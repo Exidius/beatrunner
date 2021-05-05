@@ -8,11 +8,8 @@ import androidx.lifecycle.ViewModelProvider
 import com.barad.beatrunner.data.AppDatabase
 import com.barad.beatrunner.data.PlaylistDao
 import com.barad.beatrunner.data.PlaylistMusicCrossDao
-import com.barad.beatrunner.models.Music
 import com.barad.beatrunner.models.Playlist
-import com.barad.beatrunner.models.PlaylistMusicCrossRef
 import com.barad.beatrunner.models.PlaylistWithMusics
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
@@ -31,16 +28,6 @@ class PlaylistDetailVM(
 
     init {
         _playlist.value = playlist_
-    }
-
-    fun insertCrossEntity() {
-        GlobalScope.launch {
-            //playlistMusicDao.insert(PlaylistMusicCrossRef(1, 3233))
-            playlistMusicDao.insert(PlaylistMusicCrossRef(2, 4459))
-            playlistMusicDao.insert(PlaylistMusicCrossRef(3, 4460))
-            playlistMusicDao.insert(PlaylistMusicCrossRef(4, 4461))
-            playlistMusicDao.insert(PlaylistMusicCrossRef(5, 4462))
-        }
     }
 
     fun removePlaylist() {

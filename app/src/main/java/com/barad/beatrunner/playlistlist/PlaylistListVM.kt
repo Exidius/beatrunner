@@ -1,11 +1,9 @@
 package com.barad.beatrunner.playlistlist
 
 import android.content.Context
-import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewModelScope
 import com.barad.beatrunner.data.AppDatabase
 import com.barad.beatrunner.data.PlaylistDao
 import com.barad.beatrunner.models.Playlist

@@ -1,11 +1,9 @@
 package com.barad.beatrunner.service
 
 import android.hardware.SensorEvent
-import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import com.paramsen.noise.Noise
 import kotlin.math.sqrt
-import java.time.Instant
 import java.util.*
 
 class GyroscopeStepDetector(private val steps: MutableLiveData<Float>,

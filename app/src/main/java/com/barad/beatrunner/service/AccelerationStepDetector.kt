@@ -1,6 +1,5 @@
 package com.barad.beatrunner.service
 
-import android.content.Context
 import android.hardware.SensorEvent
 import androidx.lifecycle.MutableLiveData
 import java.time.Instant
@@ -11,19 +10,23 @@ class AccelerationStepDetector(
         private val steps: MutableLiveData<Float>,
         private val sensorTempo: MutableLiveData<Float>) {
 
-    val MINIMUM_THRESHOLD = 12
-    val ALPHA = 0.9f
+    private val MINIMUM_THRESHOLD = 12
+    private val ALPHA = 0.9f
 
     private var x: Float = 0f
     private var y: Float = 0f
     private var z: Float = 0f
 
     private val sensorQueue: Queue<Float> = LinkedList()
-    val timeQueue: Queue<Instant> = LinkedList()
+    private val timeQueue: Queue<Instant> = LinkedList()
     private var latest = Instant.now()
     private var currentThreshold = 0f
 
     private val timer = Timer()
+
+    fun reset() {
+        timeQueue.clear()
+    }
 
     fun startTimer() {
         timer.schedule(object : TimerTask() {

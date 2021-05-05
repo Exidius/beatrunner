@@ -8,15 +8,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import androidx.lifecycle.ViewModelProvider
-import androidx.navigation.fragment.NavHostFragment
-import androidx.navigation.fragment.NavHostFragment.findNavController
 import androidx.navigation.fragment.findNavController
-import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
-import com.barad.beatrunner.MainVM
-import com.barad.beatrunner.MainVMFactory
 import com.barad.beatrunner.R
-import com.barad.beatrunner.models.Music
 import com.barad.beatrunner.models.Playlist
 
 class PlaylistListFragment : Fragment() {

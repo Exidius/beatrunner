@@ -9,7 +9,6 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.barad.beatrunner.R
-import com.barad.beatrunner.models.Music
 import com.barad.beatrunner.models.Playlist
 
 class PlaylistListAdapter(private val onClick: (Playlist) -> Unit, private val onButtonClick: (Playlist) -> Unit, private val btnText: String) :

@@ -1,7 +1,6 @@
 package com.barad.beatrunner.data
 
 import androidx.room.*
-import com.barad.beatrunner.models.Music
 import com.barad.beatrunner.models.Playlist
 import com.barad.beatrunner.models.PlaylistWithMusics
 

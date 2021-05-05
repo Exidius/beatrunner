@@ -5,11 +5,8 @@ import android.content.Context
 import android.database.Cursor
 import android.os.Build
 import android.provider.MediaStore
-import android.provider.Settings
 import android.util.Log
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.room.Room
 import com.barad.beatrunner.models.Music
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope

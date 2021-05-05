@@ -9,8 +9,6 @@ import com.barad.beatrunner.data.*
 import com.barad.beatrunner.models.Music
 import com.barad.beatrunner.models.Playlist
 import com.barad.beatrunner.models.PlaylistMusicCrossRef
-import com.barad.beatrunner.models.PlaylistWithMusics
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 

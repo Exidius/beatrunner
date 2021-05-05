@@ -1,22 +1,11 @@
 <resources>
     <string name="app_name">BeatRunner</string>
-    <string name="slower">Slower</string>
-    <string name="faster">Faster</string>
-    <string name="reset">Reset</string>
-    <string name="title_activity_playlist">PlaylistActivity</string>
     <!-- Strings used for fragments for navigation -->
-    <string name="first_fragment_label">First Fragment</string>
-    <string name="second_fragment_label">Second Fragment</string>
-    <string name="next">Next</string>
     <string name="previous">Previous</string>
     <string name="playback">playback</string>
 
-    <string name="hello_first_fragment">Hello first fragment</string>
-    <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
     <string name="strnew">New</string>
-    <string name="edit">Edit</string>
     <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="storage_access_label">The application requires storage access to function</string>
     <string name="provide_access">Provide access</string>
 </resources>
