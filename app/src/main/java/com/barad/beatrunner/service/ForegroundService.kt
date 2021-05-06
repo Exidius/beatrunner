@@ -36,7 +36,7 @@ class ForegroundService : LifecycleService(), SensorEventListener {
             get() = this@ForegroundService
     }
 
-    private var MAX_TEMPO_DIFFERENCE = 20
+    private var MAX_TEMPO_DIFFERENCE = 10
     private var SIGNIFICANT_TEMPO_DIFFERENCE = 3
     var ALLOW_TEMPO_CHANGE = true
 
@@ -194,8 +194,8 @@ class ForegroundService : LifecycleService(), SensorEventListener {
 
     private fun checkTempoDifference() {
         when {
-            tempoDoubleOrHalf == TempoDoubleOrHalf.DOUBLE && abs(currentMusic.value?.tempo!!/2 - sensorTempo.value!!) > MAX_TEMPO_DIFFERENCE ||
-            tempoDoubleOrHalf == TempoDoubleOrHalf.HALF && abs(currentMusic.value?.tempo!!*2 - sensorTempo.value!!) > MAX_TEMPO_DIFFERENCE ||
+            tempoDoubleOrHalf == TempoDoubleOrHalf.DOUBLE && abs(currentMusic.value?.tempo!!*2 - sensorTempo.value!!) > MAX_TEMPO_DIFFERENCE ||
+            tempoDoubleOrHalf == TempoDoubleOrHalf.HALF && abs(currentMusic.value?.tempo!!/2 - sensorTempo.value!!) > MAX_TEMPO_DIFFERENCE ||
             tempoDoubleOrHalf == TempoDoubleOrHalf.NORMAL && abs(currentMusic.value?.tempo!! - sensorTempo.value!!) > MAX_TEMPO_DIFFERENCE -> {
                 isDifferenceMax = true
                 isDifferenceSignificant = true
@@ -204,8 +204,8 @@ class ForegroundService : LifecycleService(), SensorEventListener {
                     tempoChangeRegistered = true
                 }
             }
-            tempoDoubleOrHalf == TempoDoubleOrHalf.DOUBLE && abs(currentPlaybackTempo/2 - sensorTempo.value!!) > SIGNIFICANT_TEMPO_DIFFERENCE ||
-            tempoDoubleOrHalf == TempoDoubleOrHalf.HALF && abs(currentPlaybackTempo*2 - sensorTempo.value!!) > SIGNIFICANT_TEMPO_DIFFERENCE ||
+            tempoDoubleOrHalf == TempoDoubleOrHalf.DOUBLE && abs(currentPlaybackTempo*2 - sensorTempo.value!!) > SIGNIFICANT_TEMPO_DIFFERENCE ||
+            tempoDoubleOrHalf == TempoDoubleOrHalf.HALF && abs(currentPlaybackTempo/2 - sensorTempo.value!!) > SIGNIFICANT_TEMPO_DIFFERENCE ||
             tempoDoubleOrHalf == TempoDoubleOrHalf.NORMAL && abs(currentPlaybackTempo - sensorTempo.value!!) > SIGNIFICANT_TEMPO_DIFFERENCE -> {
                 isDifferenceMax = false
                 isDifferenceSignificant = true
