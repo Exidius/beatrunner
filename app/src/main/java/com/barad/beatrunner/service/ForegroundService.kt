@@ -85,6 +85,13 @@ class ForegroundService : LifecycleService(), SensorEventListener {
     private val NOTIFICATION_ID = 2
     private var playerNotificationManager: PlayerNotificationManager? = null
 
+    private var startOfDifference = Instant.MAX
+    private var tempoChangeRegistered = false
+    private var isDifferenceMax = false
+    private var isDifferenceSignificant = false
+    private var currentPlaybackTempo = 0.0f
+    private var tempoDoubleOrHalf: TempoDoubleOrHalf = TempoDoubleOrHalf.NORMAL
+
     private val placeHolderMusic = Music(
         Int.MAX_VALUE,
         "Title",
@@ -94,13 +101,6 @@ class ForegroundService : LifecycleService(), SensorEventListener {
         "PATH",
         0f
     )
-
-    private var startOfDifference = Instant.MAX
-    private var tempoChangeRegistered = false
-    private var isDifferenceMax = false
-    private var isDifferenceSignificant = false
-    private var foundMatchingSongs = false
-    private var currentPlaybackTempo = 0.0f
 
     init{
         currentPlaylist.value = listOf(placeHolderMusic)
@@ -194,7 +194,9 @@ class ForegroundService : LifecycleService(), SensorEventListener {
 
     private fun checkTempoDifference() {
         when {
-            abs(currentMusic.value?.tempo!! - sensorTempo.value!!) > MAX_TEMPO_DIFFERENCE -> {
+            tempoDoubleOrHalf == TempoDoubleOrHalf.DOUBLE && abs(currentMusic.value?.tempo!!/2 - sensorTempo.value!!) > MAX_TEMPO_DIFFERENCE ||
+            tempoDoubleOrHalf == TempoDoubleOrHalf.HALF && abs(currentMusic.value?.tempo!!*2 - sensorTempo.value!!) > MAX_TEMPO_DIFFERENCE ||
+            tempoDoubleOrHalf == TempoDoubleOrHalf.NORMAL && abs(currentMusic.value?.tempo!! - sensorTempo.value!!) > MAX_TEMPO_DIFFERENCE -> {
                 isDifferenceMax = true
                 isDifferenceSignificant = true
                 if (!tempoChangeRegistered) {
@@ -202,7 +204,9 @@ class ForegroundService : LifecycleService(), SensorEventListener {
                     tempoChangeRegistered = true
                 }
             }
-            abs(currentPlaybackTempo - sensorTempo.value!!) > SIGNIFICANT_TEMPO_DIFFERENCE -> {
+            tempoDoubleOrHalf == TempoDoubleOrHalf.DOUBLE && abs(currentPlaybackTempo/2 - sensorTempo.value!!) > SIGNIFICANT_TEMPO_DIFFERENCE ||
+            tempoDoubleOrHalf == TempoDoubleOrHalf.HALF && abs(currentPlaybackTempo*2 - sensorTempo.value!!) > SIGNIFICANT_TEMPO_DIFFERENCE ||
+            tempoDoubleOrHalf == TempoDoubleOrHalf.NORMAL && abs(currentPlaybackTempo - sensorTempo.value!!) > SIGNIFICANT_TEMPO_DIFFERENCE -> {
                 isDifferenceMax = false
                 isDifferenceSignificant = true
                 if (!tempoChangeRegistered) {
@@ -225,6 +229,12 @@ class ForegroundService : LifecycleService(), SensorEventListener {
             if (abs(it.tempo - sensorTempo.value!!) < MAX_TEMPO_DIFFERENCE) {
                 songsMatchTempo.add(it)
             }
+            if ((abs(it.tempo/2 - sensorTempo.value!!) < MAX_TEMPO_DIFFERENCE)) {
+                songsMatchTempo.add(it)
+            }
+            if ((abs(it.tempo*2 - sensorTempo.value!!) < MAX_TEMPO_DIFFERENCE)) {
+                songsMatchTempo.add(it)
+            }
         }
         if (songsMatchTempo.isEmpty()) {
             currentPlaylist.value?.let { setPlayback(it, false) }
@@ -244,7 +254,20 @@ class ForegroundService : LifecycleService(), SensorEventListener {
     private fun changePlaybackSpeed() {
         var speed = 1f
         if (currentMusic.value?.tempo!! != 0.0f) {
-            speed = sensorTempo.value!! / (currentMusic.value?.tempo!!) //TODO: multiples of 2
+            when {
+                abs(currentMusic.value?.tempo!!*2 - sensorTempo.value!!) < MAX_TEMPO_DIFFERENCE -> {
+                    speed = sensorTempo.value!! / (currentMusic.value?.tempo!!*2)
+                    tempoDoubleOrHalf = TempoDoubleOrHalf.DOUBLE
+                }
+                abs(currentMusic.value?.tempo!!/2 - sensorTempo.value!!) < MAX_TEMPO_DIFFERENCE -> {
+                    speed = sensorTempo.value!! / (currentMusic.value?.tempo!!/2)
+                    tempoDoubleOrHalf = TempoDoubleOrHalf.HALF
+                }
+                abs(currentMusic.value?.tempo!! - sensorTempo.value!!) < MAX_TEMPO_DIFFERENCE -> {
+                    speed = sensorTempo.value!! / (currentMusic.value?.tempo!!)
+                    tempoDoubleOrHalf = TempoDoubleOrHalf.NORMAL
+                }
+            }
         }
         Log.d("barad-speedMultiplier", speed.toString())
         player.setPlaybackParameters(PlaybackParameters(speed))
@@ -345,7 +368,9 @@ class ForegroundService : LifecycleService(), SensorEventListener {
     override fun onSensorChanged(event: SensorEvent?) {
         if (event != null) {
 
-            checkTempoDifference()
+            if (currentMusic.value?.uri != "URI") {
+                checkTempoDifference()
+            }
 
             if(startOfDifference != Instant.MAX && sensorTempo.value != 0f) {
                 if (isDifferenceSignificant && isDifferenceMax &&

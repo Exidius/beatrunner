@@ -17,8 +17,8 @@ class MusicEventListener(private val foregroundService: ForegroundService,
             foregroundService.currentMusic.value = (foregroundService.currentPlaylist.value?.find {
                 (mediaItem.mediaId.split('/').last()) == it.musicId.toString()
             })
+            foregroundService.play()
         }
-        foregroundService.play()
     }
 
     override fun onPlayerError(error: ExoPlaybackException) {
