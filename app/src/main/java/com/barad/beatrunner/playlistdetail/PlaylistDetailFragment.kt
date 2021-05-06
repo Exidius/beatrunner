@@ -1,6 +1,8 @@
 package com.barad.beatrunner.playlistdetail
 
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -20,7 +22,6 @@ class PlaylistDetailFragment : Fragment() {
     private lateinit var viewModel: PlaylistDetailVM
 
     private lateinit var etName: EditText
-    private lateinit var btnDelete: Button
 
     override fun onCreateView(
             inflater: LayoutInflater, container: ViewGroup?,
@@ -63,13 +64,20 @@ class PlaylistDetailFragment : Fragment() {
             etName.setText(it.name)
         })
 
-        view.findViewById<Button>(R.id.btnSavePlaylist).setOnClickListener {
-            viewModel.playlist.value?.name = etName.text.toString()
-            Log.d("barad-asd", etName.text.toString())
-            viewModel.playlist.value?.name?.let { it1 -> Log.d("barad-asd", it1) }
-            viewModel.savePlaylist()
-        }
+        etName.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) {
+                viewModel.playlist.value?.name = s.toString()
+                viewModel.savePlaylist()
+            }
 
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+
+            }
+        })
+        
         view.findViewById<Button>(R.id.btnPlaylistDelete).setOnClickListener {
             viewModel.removePlaylist()
             findNavController().navigate(R.id.action_PlaylistDetailFragment_to_PlaylistListFragment)

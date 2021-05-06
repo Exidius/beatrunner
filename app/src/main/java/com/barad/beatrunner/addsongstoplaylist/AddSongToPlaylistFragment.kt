@@ -63,6 +63,11 @@ class AddSongToPlaylistFragment : Fragment() {
             }
         })
 
+        val refresh: Button? = view.findViewById(R.id.btnAddSongRefresh)
+        refresh?.setOnClickListener {
+            viewModel.getAllSong()
+        }
+
         return view
     }
 
