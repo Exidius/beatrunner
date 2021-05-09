@@ -12,7 +12,7 @@ class GyroscopeStepDetector(private val steps: MutableLiveData<Float>,
     private var x: Float = 0f
     private var y: Float = 0f
     private var z: Float = 0f
-    private var sensorQueue: MutableList<Float> = mutableListOf()
+    private var window: MutableList<Float> = mutableListOf()
     private val sensorBuffer: MutableList<Float> = mutableListOf()
 
     private val timer = Timer()
@@ -25,21 +25,21 @@ class GyroscopeStepDetector(private val steps: MutableLiveData<Float>,
                 sensorBuffer.add((x+y+z)/3)
 
                 if(isBufferFilled && sensorBuffer.size >= 25) {
-                    sensorQueue = sensorQueue.subList(25,sensorQueue.size)
-                    sensorQueue.addAll(sensorBuffer)
+                    window = window.subList(25,window.size)
+                    window.addAll(sensorBuffer)
                     sensorBuffer.clear()
                 }
 
                 if (!isBufferFilled && sensorBuffer.size >= 64) {
                     isBufferFilled = true
-                    sensorQueue.addAll(sensorBuffer)
+                    window.addAll(sensorBuffer)
                     sensorBuffer.clear()
                 }
 
-                if(sensorQueue.size == 64) {
+                if(window.size == 64) {
                     val noise = Noise.real(64)
 
-                    val input = sensorQueue.toFloatArray()
+                    val input = window.toFloatArray()
                     val output = FloatArray(input.size+2)
 
                     noise.fft(input, output)

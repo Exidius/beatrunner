@@ -24,7 +24,7 @@ class AccelerationStepDetector(
 
     private val timer = Timer()
 
-    fun reset() {
+    fun clear() {
         timeQueue.clear()
     }
 

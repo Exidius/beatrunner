@@ -188,7 +188,7 @@ class ForegroundService : LifecycleService(), SensorEventListener {
     }
 
     fun onTempoChangeFromUi(tempo: Float) {
-        accelerationStepDetector.reset()
+        accelerationStepDetector.clear()
         sensorTempo.value = tempo
     }
 
