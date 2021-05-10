@@ -29,7 +29,7 @@ class PlaylistListFragment : Fragment() {
         val playlistAdapter = PlaylistListAdapter(
                 { playlist -> adapterOnClick(playlist) },
                 { playlist -> onButtonClick(playlist) },
-                "Play"
+                ""
         )
 
         val recyclerView: RecyclerView = view.findViewById(R.id.playlist_recycler_view)

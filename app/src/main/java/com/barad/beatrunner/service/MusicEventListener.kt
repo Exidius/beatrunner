@@ -21,6 +21,16 @@ class MusicEventListener(private val foregroundService: ForegroundService,
         }
     }
 
+    override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+        if (!playWhenReady && reason == 1) {
+            foregroundService.playbackAllowed = false
+        }
+        if (playWhenReady && reason == 1) {
+            foregroundService.playbackAllowed = true
+        }
+        super.onPlayWhenReadyChanged(playWhenReady, reason)
+    }
+
     override fun onPlayerError(error: ExoPlaybackException) {
         super.onPlayerError(error)
         when (error.type) {

@@ -36,13 +36,15 @@ class ForegroundService : LifecycleService(), SensorEventListener {
             get() = this@ForegroundService
     }
 
-    private var MAX_TEMPO_DIFFERENCE = 10
-    private var SIGNIFICANT_TEMPO_DIFFERENCE = 3
+    private var MAX_TEMPO_DIFFERENCE = 20
+    private var SIGNIFICANT_TEMPO_DIFFERENCE = 4
     var ALLOW_TEMPO_CHANGE = true
 
     private lateinit var context: Context
 
-    private val logTimer = Timer()
+    var playbackAllowed: Boolean = false
+
+    private var logTimer = Timer()
 
     private val _sensorTempo = MutableLiveData<Float>()
     val sensorTempo
@@ -132,7 +134,7 @@ class ForegroundService : LifecycleService(), SensorEventListener {
     }
 
     fun play() {
-        if(_sensorTempo.value != 0f) {
+        if(_sensorTempo.value != 0f && playbackAllowed) {
             player.prepare()
             if (currentMusic.value?.startTime != 0L) {
                 currentMusic.value?.let { player.seekTo(it.startTime) }
@@ -143,10 +145,11 @@ class ForegroundService : LifecycleService(), SensorEventListener {
     }
 
     fun startTimer() {
+        logTimer = Timer()
         val startTime = Instant.now().toEpochMilli()
         logTimer.schedule(object : TimerTask() {
             override fun run() {
-                val line = "t: ${Instant.now().toEpochMilli()} gs: ${gyroSteps.value} gt: ${gyroSensorTempo.value} as: ${steps.value} at: ${sensorTempo.value} ${System.lineSeparator()}"
+                val line = "${Instant.now().toEpochMilli()} \t ${gyroSteps.value} \t ${gyroSensorTempo.value} \t ${steps.value} \t ${sensorTempo.value} ${System.lineSeparator()}"
 
                 val file = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS+"/tempolog-${startTime}.txt").toURI())
 
@@ -374,7 +377,7 @@ class ForegroundService : LifecycleService(), SensorEventListener {
 
             if(startOfDifference != Instant.MAX && sensorTempo.value != 0f) {
                 if (isDifferenceSignificant && isDifferenceMax &&
-                    Instant.now().toEpochMilli() - startOfDifference.toEpochMilli() > 3000) {
+                    Instant.now().toEpochMilli() - startOfDifference.toEpochMilli() > 5000) {
 
                     switchSong()
 

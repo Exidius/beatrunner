@@ -149,10 +149,12 @@ class MainFragment : Fragment() {
 
         btnStartLog.setOnClickListener {
             foregroundService?.startTimer()
+            btnStartLog.visibility = View.INVISIBLE
         }
 
         btnStopLog.setOnClickListener {
             foregroundService?.stopTimer()
+            btnStartLog.visibility = View.VISIBLE
         }
 
         switchAdaptiveTempo.setOnCheckedChangeListener { _, isChecked ->
