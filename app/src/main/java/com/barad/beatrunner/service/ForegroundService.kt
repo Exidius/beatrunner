@@ -73,6 +73,8 @@ class ForegroundService : LifecycleService(), SensorEventListener {
     private val accelerationStepDetector = AccelerationStepDetector(_steps, _sensorTempo)
     private val gyroscopeStepDetector = GyroscopeStepDetector(_gyroSteps, _gyroSensorTempo)
 
+    private val logList = mutableListOf<String>()
+
     private var sensorManager: SensorManager? = null
     private var sensorGyro: Sensor? = null
     private var sensorAcc: Sensor? = null
@@ -145,33 +147,38 @@ class ForegroundService : LifecycleService(), SensorEventListener {
     }
 
     fun startTimer() {
+        logList.clear()
         logTimer = Timer()
         val startTime = Instant.now().toEpochMilli()
         logTimer.schedule(object : TimerTask() {
             override fun run() {
                 val line = "${Instant.now().toEpochMilli()} \t ${gyroSteps.value} \t ${gyroSensorTempo.value} \t ${steps.value} \t ${sensorTempo.value} ${System.lineSeparator()}"
+                logList.add(line)
 
-                val file = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS+"/tempolog-${startTime}.txt").toURI())
-
-                if(file.exists()) {
-                    val fileWriter = FileWriter(
-                        Environment.getExternalStoragePublicDirectory(
-                            Environment.DIRECTORY_DOCUMENTS + "/tempolog-${startTime}.txt"
-                        ),
-                        true
-                    )
-                    val out = BufferedWriter(fileWriter)
-                    out.write(line)
-                    out.close()
-                } else {
-                    file.createNewFile();
-                }
             }
-        },0,1000)
+        },0,200)
     }
 
     fun stopTimer() {
         logTimer.cancel()
+        val stopTime = Instant.now().toEpochMilli()
+        val file = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS+"/tempolog-${stopTime}.txt").toURI())
+
+        if (!file.exists()) {
+            file.createNewFile()
+        }
+
+        if(file.exists()) {
+            val fileWriter = FileWriter(
+                Environment.getExternalStoragePublicDirectory(
+                    Environment.DIRECTORY_DOCUMENTS + "/tempolog-${stopTime}.txt"
+                ),
+                true
+            )
+            val out = BufferedWriter(fileWriter)
+            logList.forEach { out.write(it) }
+            out.close()
+        }
     }
 
     fun playNextInPlaylist() {
